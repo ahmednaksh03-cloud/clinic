@@ -341,6 +341,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
+    // DASHBOARD RENDERING (localStorage-based) - defined in shared scope for hoisting
+    // ==========================================
+    function renderDashboard() {
+        if (!document.body.classList.contains('doctor-page')) return;
+
+        const bookings = getBookings();
+        const tbody = document.getElementById('bookings-table-body');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        // Update Stats
+        document.getElementById('stat-total').innerText = bookings.length;
+        document.getElementById('stat-pending').innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
+        document.getElementById('stat-confirmed').innerText = bookings.filter(b => b.status === 'مؤكد').length;
+        document.getElementById('stat-followup').innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
+
+        if (bookings.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 2rem; color: var(--muted);">لا توجد حجوزات حالياً</td>`;
+            tbody.appendChild(tr);
+            return;
+        }
+
+        bookings.forEach(b => {
+            const tr = document.createElement('tr');
+
+            const statusClass = b.status === 'مؤكد' ? 'status-confirmed' :
+                                (b.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
+
+            // Format phone with WhatsApp prefix
+            let displayPhone = b.phone;
+            if (displayPhone.startsWith('01')) displayPhone = '20' + displayPhone.slice(2);
+
+            tr.innerHTML = `
+                <td><strong>${b.name}</strong></td>
+                <td>${b.date}<br><small>${b.time}</small></td>
+                <td><span style="color:var(--primary-dark); font-weight:700;">${b.visitType}</span></td>
+                <td><a href="#" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}، نود تأكيد حجزك في كلينيك زون'); return false;">${displayPhone}</a></td>
+                <td><span class="status-badge ${statusClass}">${b.status}</span></td>
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn btn-confirm" onclick="updateBookingStatus('${b.id}', 'مؤكد')" title="تأكيد"><i class="fa-solid fa-check"></i></button>
+                        <button class="action-btn btn-cancel" onclick="updateBookingStatus('${b.id}', 'ملغي')" title="إلغاء"><i class="fa-solid fa-xmark"></i></button>
+                        <button class="action-btn btn-whatsapp" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}')"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button class="action-btn btn-primary" onclick="selectForRx('${b.id}')" style="width:auto; padding:0 10px;" title="روشتة">روشتة</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ==========================================
     // DOCTOR PAGE LOGIC
     // ==========================================
     if (document.body.classList.contains('doctor-page')) {
@@ -426,60 +480,6 @@ document.addEventListener('DOMContentLoaded', () => {
             openWhatsApp(phone, msg);
         });
     }
-
-    // ==========================================
-    // DASHBOARD RENDERING (localStorage-based)
-    // ==========================================
-    window.renderDashboard = function() {
-        if (!document.body.classList.contains('doctor-page')) return;
-
-        const bookings = getBookings();
-        const tbody = document.getElementById('bookings-table-body');
-        if (!tbody) return;
-
-        tbody.innerHTML = '';
-
-        // Update Stats
-        document.getElementById('stat-total').innerText = bookings.length;
-        document.getElementById('stat-pending').innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
-        document.getElementById('stat-confirmed').innerText = bookings.filter(b => b.status === 'مؤكد').length;
-        document.getElementById('stat-followup').innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
-
-        if (bookings.length === 0) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 2rem; color: var(--muted);">لا توجد حجوزات حالياً</td>`;
-            tbody.appendChild(tr);
-            return;
-        }
-
-        bookings.forEach(b => {
-            const tr = document.createElement('tr');
-
-            const statusClass = b.status === 'مؤكد' ? 'status-confirmed' :
-                                (b.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
-
-            // Format phone with WhatsApp prefix
-            let displayPhone = b.phone;
-            if (displayPhone.startsWith('01')) displayPhone = '20' + displayPhone.slice(2);
-
-            tr.innerHTML = `
-                <td><strong>${b.name}</strong></td>
-                <td>${b.date}<br><small>${b.time}</small></td>
-                <td><span style="color:var(--primary-dark); font-weight:700;">${b.visitType}</span></td>
-                <td><a href="#" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}، نود تأكيد حجزك في كلينيك زون'); return false;">${displayPhone}</a></td>
-                <td><span class="status-badge ${statusClass}">${b.status}</span></td>
-                <td>
-                    <div class="action-btns">
-                        <button class="action-btn btn-confirm" onclick="updateBookingStatus('${b.id}', 'مؤكد')" title="تأكيد"><i class="fa-solid fa-check"></i></button>
-                        <button class="action-btn btn-cancel" onclick="updateBookingStatus('${b.id}', 'ملغي')" title="إلغاء"><i class="fa-solid fa-xmark"></i></button>
-                        <button class="action-btn btn-whatsapp" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}')"><i class="fa-brands fa-whatsapp"></i></button>
-                        <button class="action-btn btn-primary" onclick="selectForRx('${b.id}')" style="width:auto; padding:0 10px;" title="روشتة">روشتة</button>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    };
 
     window.updateBookingStatus = function(id, newStatus) {
         const bookings = getBookings().map(b => {
