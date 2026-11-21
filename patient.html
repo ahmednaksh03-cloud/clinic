@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كلينيك زون - لأمراض النساء والتوليد | د. أحمد السيد</title>
+    <!-- Google Fonts - Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="patient-page">
+
+    <!-- Header -->
+    <header class="clinic-header">
+        <div class="container header-container">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>كلينيك زون</h1>
+                    <span>لأمراض النساء والتوليد وعلاج تأخر الإنجاب</span>
+                </div>
+            </div>
+            <div class="header-contact-quick">
+                <a href="tel:01012345678" class="contact-pill"><i class="fa-solid fa-phone"></i> 01012345678</a>
+                <button id="nav-view-booking-btn" class="btn btn-outline btn-sm hidden"><i class="fa-solid fa-eye"></i> رؤية الحجز</button>
+                <a href="#booking-section" class="btn btn-primary btn-sm"><i class="fa-solid fa-calendar-plus"></i> احجزي موعدك</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <span class="badge"><i class="fa-solid fa-award"></i> رعاية طبية متكاملة بأحدث المعايير</span>
+                    <h2>نعتني بصحتك وبداية حياة جديدة لمولودك بكل حب وأمان</h2>
+                    <p>في كلينيك زون، نوفر لكِ بيئة طبية هادئة ومريحة مجهزة بأحدث أجهزة السونار والتقنيات الطبية المتقدمة تحت إشراف نخبة من الاستشاريين المتخصصين.</p>
+                    <div class="hero-buttons">
+                        <a href="#booking-section" class="btn btn-primary"><i class="fa-solid fa-calendar-check"></i> احجزي موعدك الآن</a>
+                        <a href="#services-section" class="btn btn-outline"><i class="fa-solid fa-stethoscope"></i> خدماتنا الطبية</a>
+                    </div>
+                </div>
+
+                <div class="hero-card">
+                    <div class="doctor-profile-card">
+                        <div class="doc-avatar">
+                            <img src="doctor.jpeg" id="patient-doc-img" alt="د. أحمد السيد" onerror="handleDoctorImgFallback(this)">
+                        </div>
+                        <h3>د. أحمد السيد</h3>
+                        <p class="doc-title">استشاري أمراض النساء والتوليد وعلاج تأخر الإنجاب</p>
+                        <ul class="doc-credentials">
+                            <li><i class="fa-solid fa-circle-check"></i> زميل المعهد القومي للنساء والتوليد</li>
+                            <li><i class="fa-solid fa-circle-check"></i> جراحات المناظير النسائية المتقدمة</li>
+                            <li><i class="fa-solid fa-circle-check"></i> خبرة طبية متميزة أكثر من 15 عاماً</li>
+                        </ul>
+                        <div class="clinic-hours">
+                            <i class="fa-regular fa-clock"></i> مواعيد العيادة: السبت - الخميس (٤ م - ١٠ م)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services-section" class="services-section container">
+            <div class="section-title">
+                <h2>خدماتنا الطبية المتميزة</h2>
+                <p>رعاية طبية تخصصية متكاملة لصحة المرأة في جميع مراحل حياتها</p>
+            </div>
+
+            <div class="services-grid services-5-grid">
+                <!-- Service 1: Pregnancy Follow-up -->
+                <div class="service-card-modern">
+                    <div class="service-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=700&q=80" alt="متابعة الحمل" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        <div class="service-fallback-icon hidden"><i class="fa-solid fa-baby"></i></div>
+                        <span class="service-tag">رعاية متواصلة</span>
+                    </div>
+                    <div class="service-card-body">
+                        <div class="service-header-icon"><i class="fa-solid fa-person-pregnant"></i></div>
+                        <h3>متابعة الحمل</h3>
+                        <p>رعاية دورية دقيقة ومتابعة صحة ونمو الجنين من الأسابيع الأولى وحتى لحظة الولادة مع التحاليل والفحوصات اللازمة.</p>
+                    </div>
+                </div>
+
+                <!-- Service 2: 4D Ultrasound -->
+                <div class="service-card-modern">
+                    <div class="service-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=700&q=80" alt="السونار رباعي الأبعاد" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        <div class="service-fallback-icon hidden"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                        <span class="service-tag">أحدث تقنية</span>
+                    </div>
+                    <div class="service-card-body">
+                        <div class="service-header-icon"><i class="fa-solid fa-eye"></i></div>
+                        <h3>السونار رباعي الأبعاد (4D)</h3>
+                        <p>أدق أجهزة الموجات فوق الصوتية لرؤية ملامح وجه الجنين وحركته بوضوح تام، واكتشاف أي عيوب خلقية مبكراً.</p>
+                    </div>
+                </div>
+
+                <!-- Service 3: One-day Minor Surgeries -->
+                <div class="service-card-modern">
+                    <div class="service-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=700&q=80" alt="عمليات اليوم الواحد الخفيفة" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        <div class="service-fallback-icon hidden"><i class="fa-solid fa-hospital-user"></i></div>
+                        <span class="service-tag">أمان وسرعة تعافي</span>
+                    </div>
+                    <div class="service-card-body">
+                        <div class="service-header-icon"><i class="fa-solid fa-scissors"></i></div>
+                        <h3>عمليات اليوم الواحد الخفيفة</h3>
+                        <p>إجراء التدخلات الجراحية النسائية البسيطة والمناظير بأعلى معايير التعقيم والراحة دون الحاجة للإقامة بالمستشفى.</p>
+                    </div>
+                </div>
+
+                <!-- Service 4: Early Tumor Screening -->
+                <div class="service-card-modern">
+                    <div class="service-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=700&q=80" alt="الكشف المبكر للأورام" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        <div class="service-fallback-icon hidden"><i class="fa-solid fa-shield-virus"></i></div>
+                        <span class="service-tag">وقاية واطمئنان</span>
+                    </div>
+                    <div class="service-card-body">
+                        <div class="service-header-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <h3>الكشف المبكر للأورام</h3>
+                        <p>فحوصات دورية ومسحات عنق الرحم وسونار الثدي للاطمئنان الكامل والكشف المبكر بأحدث البروتوكولات العالمية.</p>
+                    </div>
+                </div>
+
+                <!-- Service 5: Infertility Treatment -->
+                <div class="service-card-modern">
+                    <div class="service-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=700&q=80" alt="علاج تأخر الإنجاب" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        <div class="service-fallback-icon hidden"><i class="fa-solid fa-hands-holding-child"></i></div>
+                        <span class="service-tag">أمل جديد</span>
+                    </div>
+                    <div class="service-card-body">
+                        <div class="service-header-icon"><i class="fa-solid fa-heart"></i></div>
+                        <h3>علاج تأخر الإنجاب</h3>
+                        <p>تشخيص دقيق لأسباب تأخر الحمل للزوجين، تنشيط التبويض، ومتابعة برامج الحقن المجهري لتحقيق حلم الأمومة.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Booking Section -->
+        <section id="booking-section" class="booking-section">
+            <div class="container">
+                <div class="section-title">
+                    <h2>احجزي موعدك في كلينيك زون</h2>
+                    <p>املأي البيانات أدناه وسيتولى فريق العيادة تأكيد موعدك مباشرة عبر الواتساب</p>
+                </div>
+
+                <div class="booking-wrapper">
+                    <!-- Form -->
+                    <form id="patient-booking-form" class="booking-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="b-name"><i class="fa-solid fa-user"></i> اسم المريضة الثلاثي</label>
+                                <input type="text" id="b-name" required placeholder="مثال: ياسمين أحمد محمود">
+                            </div>
+                            <div class="form-group">
+                                <label for="b-phone"><i class="fa-solid fa-phone"></i> رقم الهاتف (واتساب)</label>
+                                <input type="tel" id="b-phone" required placeholder="01012345678">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="b-date"><i class="fa-solid fa-calendar"></i> تاريخ الزيارة</label>
+                                <input type="date" id="b-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="b-time"><i class="fa-solid fa-clock"></i> الموعد المفضّل</label>
+                                <select id="b-time" required>
+                                    <option value="">اختر التوقيت</option>
+                                    <option value="04:00 مساءً">04:00 مساءً</option>
+                                    <option value="04:30 مساءً">04:30 مساءً</option>
+                                    <option value="05:00 مساءً">05:00 مساءً</option>
+                                    <option value="05:30 مساءً">05:30 مساءً</option>
+                                    <option value="06:00 مساءً">06:00 مساءً</option>
+                                    <option value="06:30 مساءً">06:30 مساءً</option>
+                                    <option value="07:00 مساءً">07:00 مساءً</option>
+                                    <option value="07:30 مساءً">07:30 مساءً</option>
+                                    <option value="08:00 مساءً">08:00 مساءً</option>
+                                    <option value="08:30 مساءً">08:30 مساءً</option>
+                                    <option value="09:00 مساءً">09:00 مساءً</option>
+                                    <option value="09:30 مساءً">09:30 مساءً</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="b-visit-type"><i class="fa-solid fa-list-check"></i> نوع الزيارة</label>
+                                <select id="b-visit-type" required>
+                                    <option value="">اختر نوع الزيارة</option>
+                                    <option value="كشف جديد">كشف جديد</option>
+                                    <option value="متابعة حمل">متابعة حمل</option>
+                                    <option value="سونار رباعي الأبعاد">سونار رباعي الأبعاد (4D)</option>
+                                    <option value="حجز متابعة - مريضة سابقة">حجز متابعة - مريضة سابقة</option>
+                                    <option value="استشارة">استشارة طبية</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group full-width">
+                                <label for="b-notes"><i class="fa-solid fa-comment-medical"></i> ملاحظات أو شكوى رئيسية (اختياري)</label>
+                                <textarea id="b-notes" rows="3" placeholder="اكتبي أي أعراض، استفسار، أو شهر الحمل الحالي..."></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="submit-booking-btn" class="btn btn-primary btn-block">
+                            <i class="fa-solid fa-paper-plane"></i> تأكيد إرسال طلب الحجز
+                        </button>
+                    </form>
+
+                    <!-- Success Message Box -->
+                    <div id="patient-booking-success" class="success-message hidden">
+                        <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <h3>تم استلام طلب حجزك في كلينيك زون، وسيتولى فريق العيادة تأكيد موعدك مباشرة عبر الواتساب.</h3>
+                        <p>شكراً لثقتك بنا.</p>
+                        <button type="button" id="view-booking-btn" class="btn btn-outline btn-block"><i class="fa-solid fa-eye"></i> رؤية الحجز</button>
+                    </div>
+
+                    <!-- Booking Summary Card -->
+                    <div id="patient-booking-details" class="booking-details-card hidden">
+                        <div class="details-header">
+                            <i class="fa-solid fa-calendar-check"></i>
+                            <h3>تفاصيل حجزك الحالي</h3>
+                        </div>
+                        <div class="details-body">
+                            <div class="detail-item"><strong>الاسم:</strong> <span id="det-name"></span></div>
+                            <div class="detail-item"><strong>رقم الهاتف:</strong> <span id="det-phone"></span></div>
+                            <div class="detail-item"><strong>التاريخ:</strong> <span id="det-date"></span></div>
+                            <div class="detail-item"><strong>الوقت:</strong> <span id="det-time"></span></div>
+                            <div class="detail-item"><strong>نوع الزيارة:</strong> <span id="det-type"></span></div>
+                            <div class="detail-item"><strong>حالة الحجز:</strong> <span id="det-status" class="status-badge"></span></div>
+                        </div>
+                        <div class="details-footer">
+                            <button id="cancel-my-booking-btn" class="btn btn-danger btn-block"><i class="fa-solid fa-trash-can"></i> إلغاء الحجز</button>
+                            <button id="back-to-form-btn" class="btn btn-outline btn-block mt-10">العودة للرئيسية</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="clinic-footer">
+        <div class="container footer-content">
+            <div class="footer-col">
+                <h3>كلينيك زون - لأمراض النساء والتوليد</h3>
+                <p>صحتك وسلامة طفلك هي رسالتنا وهدفنا الدائم. نجمع بين الخبرة الطبية المرموقة وأحدث التجهيزات لتجربة طبية استثنائية.</p>
+            </div>
+            <div class="footer-col">
+                <h3>معلومات التواصل</h3>
+                <p><i class="fa-solid fa-location-dot"></i> شارع الجمهورية - برج الأطباء التخصصي - الدور الثالث</p>
+                <p><i class="fa-solid fa-phone"></i> 01012345678 - 0402233445</p>
+                <p><i class="fa-solid fa-envelope"></i> contact@cliniczone-obgyn.com</p>
+            </div>
+            <div class="footer-col">
+                <h3>مواعيد العمل</h3>
+                <p><i class="fa-regular fa-clock"></i> السبت إلى الخميس: 4:00 مساءً حتى 10:00 مساءً</p>
+                <p><i class="fa-solid fa-calendar-xmark"></i> يوم الجمعة: إجازة أسبوعية</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>جميع الحقوق محفوظة &copy; 2026 كلينيك زون - د. أحمد السيد</p>
+        </div>
+    </footer>
+
+    <!-- App Script -->
+    <script src="app.js"></script>
+</body>
+</html>
