@@ -130,43 +130,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // EMAILJS NOTIFICATION HELPER
     // ==========================================
+    // Initialize EmailJS
+    if (typeof emailjs !== 'undefined') {
+        emailjs.init({ publicKey: "x-Mr2JNw2KIkUIduW" });
+    }
+
     function sendEmailNotification(booking) {
         // Silently skip if EmailJS placeholders are empty
         if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
             return;
         }
 
-        try {
-            fetch(`https://api.emailjs.com/api/v1.0/email/send`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    service_id: EMAILJS_SERVICE_ID,
-                    template_id: EMAILJS_TEMPLATE_ID,
-                    user_id: EMAILJS_PUBLIC_KEY,
-                    template_parameters: {
-                        patient_name: booking.name,
-                        patient_phone: booking.phone,
-                        booking_date: booking.date,
-                        booking_time: booking.time,
-                        visit_type: booking.visitType || '',
-                        notes: booking.notes || ''
-                    }
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    // Silent fail - no console errors
-                }
-            })
-            .catch(() => {
-                // Silent fail
-            });
-        } catch (err) {
-            // Silent fail - no console errors
+        if (typeof emailjs === 'undefined') {
+            console.warn('EmailJS SDK not loaded');
+            return;
         }
+
+        const templateParams = {
+            patient_name: booking.name,
+            patient_phone: booking.phone,
+            booking_date: booking.date,
+            booking_time: booking.time,
+            visit_type: booking.visitType || '',
+            notes: booking.notes || "لا توجد ملاحظات",
+            name: booking.name,
+            email: "ahmednaksh03@gmail.com"
+        };
+
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+            .then((response) => {
+                console.log('EmailJS success:', response.status, response.text);
+            })
+            .catch((error) => {
+                console.error('EmailJS error:', error);
+            });
     }
 
     // ==========================================
@@ -452,6 +449,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('stat-pending').innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
         document.getElementById('stat-confirmed').innerText = bookings.filter(b => b.status === 'مؤكد').length;
         document.getElementById('stat-followup').innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
+
+        if (bookings.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 2rem; color: var(--muted);">لا توجد حجوزات حالياً</td>`;
+            tbody.appendChild(tr);
+            return;
+        }
 
         bookings.forEach(b => {
             const tr = document.createElement('tr');
