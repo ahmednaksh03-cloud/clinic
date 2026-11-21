@@ -162,16 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // WHATSAPP HELPER
-    // ==========================================
-    function openWhatsApp(phone, msg) {
-        let cleanPhone = phone.replace(/\D/g, '');
-        if (cleanPhone.startsWith('01')) cleanPhone = '2' + cleanPhone;
-        else if (!cleanPhone.startsWith('20') && cleanPhone.length === 10) cleanPhone = '20' + cleanPhone;
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-    }
-
-    // ==========================================
     // DATE FORMATTING
     // ==========================================
     function formatDate(dateStr) {
@@ -182,6 +172,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatTime(timeStr) {
         return timeStr || 'غير محدد';
     }
+
+    // ==========================================
+    // WHATSAPP HELPER (exposed globally for inline onclick)
+    // ==========================================
+    window.openWhatsApp = function(phone, msg) {
+        let cleanPhone = phone.replace(/\D/g, '');
+        if (cleanPhone.startsWith('01')) cleanPhone = '2' + cleanPhone;
+        else if (!cleanPhone.startsWith('20') && cleanPhone.length === 10) cleanPhone = '20' + cleanPhone;
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    };
 
     // ==========================================
     // PATIENT PAGE LOGIC
@@ -406,12 +406,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const loginForm = document.getElementById('doctor-login-form');
         const logoutBtn = document.getElementById('doctor-logout-btn');
         const refreshBtn = document.getElementById('refresh-data-btn');
+        const prescNameSelect = document.getElementById('presc-name');
+        const prescPhoneInput = document.getElementById('presc-phone');
+        const prescMedsArea = document.getElementById('presc-meds');
+        const medChips = document.querySelectorAll('.med-chip');
 
         // Check Login State
         if (sessionStorage.getItem('doctor_logged_in') === 'true') {
             loginOverlay.classList.add('hidden');
             renderDashboard();
-            startPolling();
+            populatePatientDropdown();
         }
 
         if (loginForm) {
@@ -422,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('doctor_logged_in', 'true');
                     loginOverlay.classList.add('hidden');
                     renderDashboard();
-                    startPolling();
+                    populatePatientDropdown();
                 } else {
                     document.getElementById('login-error').classList.remove('hidden');
                 }
@@ -436,15 +440,61 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Refresh button - hard cache-busting reload
         if (refreshBtn) {
-            refreshBtn.addEventListener('click', renderDashboard);
+            refreshBtn.addEventListener('click', () => {
+                location.reload(true); // Force reload from server (Ctrl+Shift+R equivalent)
+            });
         }
 
-        // Prescription logic
-        const prescForm = document.getElementById('prescription-form');
-        const medChips = document.querySelectorAll('.med-chip');
-        const prescMedsArea = document.getElementById('presc-meds');
+        // Populate patient dropdown with unique names from bookings
+        function populatePatientDropdown() {
+            if (!prescNameSelect) return;
+            const bookings = getBookings();
+            // Get unique patients by name+phone
+            const uniquePatients = [];
+            const seen = new Set();
+            bookings.forEach(b => {
+                const key = b.name + '|' + b.phone;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniquePatients.push({ name: b.name, phone: b.phone });
+                }
+            });
 
+            // Preserve currently selected value
+            const currentValue = prescNameSelect.value;
+
+            // Clear and repopulate
+            prescNameSelect.innerHTML = '<option value="" disabled selected>اختر مريضة من الجدول</option>';
+            uniquePatients.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.name;
+                opt.dataset.phone = p.phone;
+                opt.textContent = p.name;
+                prescNameSelect.appendChild(opt);
+            });
+
+            // Restore selection if still valid
+            if (currentValue && uniquePatients.some(p => p.name === currentValue)) {
+                prescNameSelect.value = currentValue;
+                prescPhoneInput.value = uniquePatients.find(p => p.name === currentValue).phone;
+            }
+        }
+
+        // Auto-fill phone when patient selected from dropdown
+        if (prescNameSelect) {
+            prescNameSelect.addEventListener('change', () => {
+                const selectedOption = prescNameSelect.options[prescNameSelect.selectedIndex];
+                if (selectedOption && selectedOption.dataset.phone) {
+                    prescPhoneInput.value = selectedOption.dataset.phone;
+                } else {
+                    prescPhoneInput.value = '';
+                }
+            });
+        }
+
+        // Medication chips - append to presc-meds on new line
         medChips.forEach(chip => {
             chip.addEventListener('click', () => {
                 const med = chip.getAttribute('data-med');
@@ -455,8 +505,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.getElementById('print-presc-btn').addEventListener('click', () => {
-            const name = document.getElementById('presc-name').value;
-            const meds = document.getElementById('presc-meds').value;
+            const name = prescNameSelect.value;
+            const meds = prescMedsArea.value;
             const diagnosis = document.getElementById('presc-diagnosis').value;
 
             if (!name || !meds) return alert('يرجى إدخال اسم المريضة والأدوية firstly');
@@ -470,13 +520,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.getElementById('whatsapp-presc-btn').addEventListener('click', () => {
-            const name = document.getElementById('presc-name').value;
-            const phone = document.getElementById('presc-phone').value;
-            const meds = document.getElementById('presc-meds').value;
+            const name = prescNameSelect.value;
+            const phone = prescPhoneInput.value;
+            const meds = prescMedsArea.value;
+            const diagnosis = document.getElementById('presc-diagnosis').value;
 
             if (!name || !phone || !meds) return alert('البيانات غير مكتملة للإرسال');
 
-            const msg = `روشتة طبية من كلينيك زون\nالمريضة: ${name}\nالأدوية:\n${meds}\nمع تمنياتنا بالشفاء العاجل.`;
+            const msg = `روشتة طبية من كلينيك زون\nالمريضة: ${name}\nالتشخيص: ${diagnosis || 'حالة طبية عامة'}\nالأدوية:\n${meds}\nمع تمنياتنا بالشفاء العاجل.`;
             openWhatsApp(phone, msg);
         });
     }
@@ -495,8 +546,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const bookings = getBookings();
         const booking = bookings.find(b => b.id === id);
         if (booking) {
-            document.getElementById('presc-name').value = booking.name;
-            document.getElementById('presc-phone').value = booking.phone;
+            const prescNameSelect = document.getElementById('presc-name');
+            const prescPhoneInput = document.getElementById('presc-phone');
+            if (prescNameSelect) {
+                prescNameSelect.value = booking.name;
+                // Trigger change event to auto-fill phone
+                prescNameSelect.dispatchEvent(new Event('change'));
+            }
+            if (prescPhoneInput) {
+                prescPhoneInput.value = booking.phone;
+            }
             document.getElementById('prescription-section').scrollIntoView();
         }
     };
