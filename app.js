@@ -49,11 +49,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     function getBookings() {
         const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
+        if (!data) return [];
+        try {
+            const parsed = JSON.parse(data);
+            // Support both array of bookings and single booking object (legacy)
+            return Array.isArray(parsed) ? parsed : [parsed];
+        } catch (e) {
+            console.error('Failed to parse bookings:', e);
+            return [];
+        }
     }
 
     function saveBookings(bookings) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+        // Ensure we always save as array
+        const bookingsArray = Array.isArray(bookings) ? bookings : [bookings];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookingsArray));
     }
 
     function addBooking(booking) {
