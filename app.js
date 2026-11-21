@@ -136,34 +136,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function sendEmailNotification(booking) {
-        // Silently skip if EmailJS placeholders are empty
-        if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
-            return;
-        }
-
-        if (typeof emailjs === 'undefined') {
-            console.warn('EmailJS SDK not loaded');
-            return;
-        }
-
-        const templateParams = {
+        if (typeof emailjs === 'undefined') return;
+        emailjs.send("service_ghdqi7p", "template_m1g99vm", {
             patient_name: booking.name,
             patient_phone: booking.phone,
             booking_date: booking.date,
             booking_time: booking.time,
             visit_type: booking.visitType || '',
-            notes: booking.notes || "لا توجد ملاحظات",
+            notes: booking.notes || 'لا توجد ملاحظات',
             name: booking.name,
-            email: "ahmednaksh03@gmail.com"
-        };
-
-        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
-            .then((response) => {
-                console.log('EmailJS success:', response.status, response.text);
-            })
-            .catch((error) => {
-                console.error('EmailJS error:', error);
-            });
+            email: 'ahmednaksh03@gmail.com',
+            to_email: 'ahmednaksh03@gmail.com'
+        }).then(res => console.log('EmailJS OK:', res.status))
+          .catch(err => console.error('EmailJS Error:', err));
     }
 
     // ==========================================
