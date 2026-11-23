@@ -925,7 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // ==========================================
-        // REAL-TIME FIREBASE LISTENER FOR DOCTOR DASHBOARD
+        // REAL-TIME CROSS-TAB SYNC LISTENERS
         // ==========================================
         // Listen for booking status changes from patient page
         const bc = new BroadcastChannel('clinic_zone_sync');
@@ -945,48 +945,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
-
-        // Real-time Firebase listener for bookings (handled in renderDashboard)
-        function attachBookingsListener() {
-            // Handled directly via renderDashboard's database.ref(BOOKINGS_PATH).on('value', ...)
-        }
-
-        // Render Dashboard with direct real-time Firebase listener
-        window.renderDashboard = function() {
-            if (!document.body.classList.contains('doctor-page')) return;
-
-            const bookingsRef = database.ref(BOOKINGS_PATH);
-            bookingsRef.on('value', (snapshot) => {
-                const bookings = [];
-                if (snapshot.exists()) {
-                    snapshot.forEach((child) => {
-                        const data = child.val();
-                        bookings.push({ id: child.key, ...data });
-                    });
-                }
-
-                window.allBookings = bookings;
-
-                // Update Stats
-                const statTotal = document.getElementById('stat-total');
-                if (statTotal) statTotal.innerText = bookings.length;
-
-                const statPending = document.getElementById('stat-pending');
-                if (statPending) statPending.innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
-
-                const statConfirmed = document.getElementById('stat-confirmed');
-                if (statConfirmed) statConfirmed.innerText = bookings.filter(b => b.status === 'مؤكد').length;
-
-                const statFollowup = document.getElementById('stat-followup');
-                if (statFollowup) statFollowup.innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
-
-                // Populate patient dropdown
-                populatePatientDropdown();
-
-                // Apply filters and render table
-                applyBookingFilters(window.allBookings);
-            });
-        };
 
         // Search and filter functionality
         function applyBookingFilters(bookings) {
@@ -1182,9 +1140,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         };
-
-        // Attach real-time listener
-        attachBookingsListener();
 
         // Initialize search and filters
         initSearchAndFilters();
