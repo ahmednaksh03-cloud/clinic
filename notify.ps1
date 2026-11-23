@@ -7,7 +7,7 @@ try {
 
 if ($BARK_KEY) {
     $url = "https://api.day.app/$BARK_KEY/Clinic%20Zone/Task%20Completed?call=1&level=critical&sound=alarm&volume=10"
-    $res = Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 15
+    $res = Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 30
     Write-Host "Bark status: $($res.message)"
 }
 
