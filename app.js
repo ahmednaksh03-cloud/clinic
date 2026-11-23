@@ -1,153 +1,46 @@
 /* ==========================================
-   APP.JS - CLINIC ZONE (Pure Local Real-Time Sync)
-   Uses localStorage only - no servers, no localhost calls
+   APP.JS - CLINIC ZONE (Firebase Real-Time Sync)
    ========================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
 
     // ==========================================
-    // CONFIGURATION
+    // FIREBASE CONFIGURATION
     // ==========================================
-    const STORAGE_KEY = 'clinic_zone_bookings';
-    const PASSWORD = '1234';
-    const EMAILJS_SERVICE_ID = 'service_ghdqi7p';
-    const EMAILJS_TEMPLATE_ID = 'template_m1g99vm';
-    const EMAILJS_PUBLIC_KEY = 'x-Mr2JNw2KIkUIduW';
-
-    // Web Audio API notification chime
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    let audioContext = null;
-
-    function playNotificationChime() {
-        if (audioContext === null) {
-            try {
-                audioContext = new AudioContext();
-            } catch (e) {
-                return; // No audio support
-            }
-        }
-
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 440;
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        gainNode.gain.value = 0.1;
-
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 500);
-    }
-
-    // ==========================================
-    // LOCALSTORAGE HELPERS
-    // ==========================================
-    function getBookings() {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (!data) return [];
-        try {
-            const parsed = JSON.parse(data);
-            // Support both array of bookings and single booking object (legacy)
-            return Array.isArray(parsed) ? parsed : [parsed];
-        } catch (e) {
-            console.error('Failed to parse bookings:', e);
-            return [];
-        }
-    }
-
-    function saveBookings(bookings) {
-        // Ensure we always save as array
-        const bookingsArray = Array.isArray(bookings) ? bookings : [bookings];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookingsArray));
-    }
-
-    function addBooking(booking) {
-        const bookings = getBookings();
-        // Avoid duplicates by ID
-        if (!bookings.some(b => b.id === booking.id)) {
-            bookings.push(booking);
-            saveBookings(bookings);
-        }
-    }
-
-    function removeBooking(id) {
-        const bookings = getBookings().filter(b => b.id !== id);
-        saveBookings(bookings);
-    }
-
-    function updateBooking(id, updates) {
-        const bookings = getBookings().map(b => {
-            if (b.id === id) return { ...b, ...updates };
-            return b;
-        });
-        saveBookings(bookings);
-    }
-
-    // ==========================================
-    // TAB SYNC: storage event + 1-second interval + BroadcastChannel
-    // ==========================================
-    const SYNC_CHANNEL = 'clinic_zone_sync';
-    const bc = new BroadcastChannel(SYNC_CHANNEL);
-
-    // BroadcastChannel message handler for real-time sync
-    bc.onmessage = (event) => {
-        if (event.data === 'new-booking' || event.data === 'refresh') {
-            if (document.body.classList.contains('doctor-page') && window.renderDashboard) {
-                window.renderDashboard();
-            }
-            if (document.body.classList.contains('patient-page')) {
-                checkExistingBooking();
-            }
-        }
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY_HERE",
+        authDomain: "clinic-zone-84536.firebaseapp.com",
+        databaseURL: "https://clinic-zone-84536-default-rtdb.firebaseio.com",
+        projectId: "clinic-zone-84536",
+        storageBucket: "clinic-zone-84536.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
     };
 
-    // storage event listener for cross-tab sync
-    window.addEventListener('storage', (e) => {
-        if (e.key === STORAGE_KEY) {
-            // Re-render the UI for the current page
-            if (document.body.classList.contains('doctor-page') && window.renderDashboard) {
-                window.renderDashboard();
-            }
-            if (document.body.classList.contains('patient-page')) {
-                checkExistingBooking();
-            }
-        }
-    });
+    // Initialize Firebase (compat v10)
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-    // 1-second interval fallback for robustness (triggers re-render on doctor page)
-    let syncInterval = setInterval(() => {
-        if (document.body.classList.contains('doctor-page') && window.renderDashboard) {
-            window.renderDashboard();
-        }
-        if (document.body.classList.contains('patient-page')) {
-            checkExistingBooking();
-        }
-    }, 1000);
-
-    // Helper for checking if set has all elements
-    Set.prototype.hasAll = function(other) {
-        for (let item of other) {
-            if (!this.has(item)) return false;
-        }
-        return true;
-    };
+    // Reference paths
+    const BOOKINGS_PATH = 'bookings';
+    const QUEUE_PATH = 'clinic_state/current_queue';
+    const PRESCRIPTIONS_PATH = 'prescriptions';
 
     // ==========================================
     // EMAILJS NOTIFICATION HELPER
     // ==========================================
+    const EMAILJS_SERVICE_ID = 'service_ghdqi7p';
+    const EMAILJS_TEMPLATE_ID = 'template_m1g99vm';
+    const EMAILJS_PUBLIC_KEY = 'x-Mr2JNw2KIkUIduW';
+
     // Initialize EmailJS
     if (typeof emailjs !== 'undefined') {
-        emailjs.init({ publicKey: "x-Mr2JNw2KIkUIduW" });
+        emailjs.init(EMAILJS_PUBLIC_KEY);
     }
 
     function sendEmailNotification(booking) {
         if (typeof emailjs === 'undefined') return;
-        emailjs.send("service_ghdqi7p", "template_m1g99vm", {
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
             patient_name: booking.name,
             patient_phone: booking.phone,
             booking_date: booking.date,
@@ -174,6 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
+    // NOTIFICATION CHIME
+    // ==========================================
+    function playNotificationChime() {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // ==========================================
     // WHATSAPP HELPER (exposed globally for inline onclick)
     // ==========================================
     window.openWhatsApp = function(phone, msg) {
@@ -182,6 +92,84 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (!cleanPhone.startsWith('20') && cleanPhone.length === 10) cleanPhone = '20' + cleanPhone;
         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
     };
+
+    // ==========================================
+    // SLOT LOCKING LOGIC
+    // ==========================================
+    function getBookingsForDate(dateStr) {
+        return new Promise((resolve) => {
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.orderByChild('date').equalTo(dateStr).once('value', (snapshot) => {
+                const bookings = [];
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    bookings.push({ id: child.key, ...data });
+                });
+                resolve(bookings);
+            });
+        });
+    }
+
+    function getActiveBookingsForDate(dateStr) {
+        return getBookingsForDate(dateStr).then(bookings => {
+            return bookings.filter(b => b.status !== 'ملغي' && b.status !== 'cancelled');
+        });
+    }
+
+    // ==========================================
+    // LIVE QUEUE MANAGEMENT
+    // ==========================================
+    function initLiveQueue() {
+        // Read initial queue state from Firebase
+        database.ref(QUEUE_PATH).once('value', (snapshot) => {
+            const queue = snapshot.val() || 1;
+            updateQueueUI(queue);
+        });
+
+        // Listen for queue changes live
+        database.ref(QUEUE_PATH).on('value', (snapshot) => {
+            const queue = snapshot.val() || 1;
+            updateQueueUI(queue);
+        });
+    }
+
+    function updateQueueUI(queueNumber) {
+        const queueEl = document.getElementById('current-queue-number');
+        if (queueEl) queueEl.textContent = queueNumber || 1;
+    }
+
+    // Queue control buttons with minimum of 1 constraint
+    window.decrementQueue = function() {
+        database.ref(QUEUE_PATH).transaction(current => {
+            return Math.max(1, (current || 1) - 1);
+        });
+    };
+
+    window.incrementQueue = function() {
+        database.ref(QUEUE_PATH).transaction(current => {
+            return (current || 1) + 1;
+        });
+    };
+
+    window.resetQueue = function() {
+        database.ref(QUEUE_PATH).set(1);
+    };
+
+    // Initialize queue control button listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        // Decrement queue
+        if (document.getElementById('queue-decrement-btn')) {
+            document.getElementById('queue-decrement-btn').addEventListener('click', decrementQueue);
+        }
+        // Increment queue
+        if (document.getElementById('queue-increment-btn')) {
+            document.getElementById('queue-increment-btn').addEventListener('click', incrementQueue);
+        }
+        // Reset queue
+        if (document.getElementById('queue-reset-btn')) {
+            document.getElementById('queue-reset-btn').addEventListener('click', resetQueue);
+        }
+    });
 
     // ==========================================
     // PATIENT PAGE LOGIC
@@ -200,13 +188,77 @@ document.addEventListener('DOMContentLoaded', () => {
         const navViewBtn = document.getElementById('nav-view-booking-btn');
         const dateInput = document.getElementById('b-date');
         const submitBtn = document.getElementById('submit-booking-btn');
-        const patientBookingForm = document.getElementById('patient-booking-form');
+        const liveQueueBanner = document.getElementById('live-queue-banner');
+        const queueNumberEl = document.getElementById('queue-number');
 
         // Set min date to today
         if (dateInput) {
             const today = new Date().toISOString().split('T')[0];
             dateInput.min = today;
             dateInput.value = today;
+        }
+
+        // Initialize live queue
+        initLiveQueue();
+
+        // Live slot locking on date change
+        if (dateInput) {
+            dateInput.addEventListener('change', async () => {
+                const selectedDate = dateInput.value;
+                if (!selectedDate) return;
+
+                try {
+                    const activeBookings = await getActiveBookingsForDate(selectedDate);
+                    disableBookedSlots(activeBookings);
+                } catch (err) {
+                    console.error('Error checking bookings for slot locking:', err);
+                }
+            });
+        }
+
+        function disableBookedSlots(bookedSlots) {
+            const timeSelect = document.getElementById('b-time');
+            if (!timeSelect) return;
+
+            // Store current options
+            const currentOptions = [];
+            for (let i = 0; i < timeSelect.options.length; i++) {
+                currentOptions.push(timeSelect.options[i].value);
+            }
+
+            // Disable booked slots
+            timeSelect.innerHTML = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'اختر التوقيت';
+            timeSelect.appendChild(defaultOption);
+
+            const allSlots = [
+                '04:00 مساءً', '04:30 مساءً', '05:00 مساءً', '05:30 مساءً',
+                '06:00 مساءً', '06:30 مساءً', '07:00 مساءً', '07:30 مساءً',
+                '08:00 مساءً', '08:30 مساءً', '09:00 مساءً', '09:30 مساءً'
+            ];
+
+            allSlots.forEach(slot => {
+                const isBooked = bookedSlots.some(b => b.time === slot);
+                const option = document.createElement('option');
+                option.value = slot;
+                option.textContent = slot;
+                option.disabled = isBooked;
+                if (isBooked) {
+                    option.style.color = '#ef4444';
+                    option.style.fontWeight = '700';
+                }
+                timeSelect.appendChild(option);
+            });
+
+            // Re-add the options that were previously selected
+            currentOptions.forEach(optVal => {
+                const existing = timeSelect.querySelector(`option[value="${optVal}"]`);
+                if (existing && !existing.disabled) {
+                    existing.selected = true;
+                }
+            });
         }
 
         // Check for existing booking on load
@@ -228,29 +280,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     timestamp: new Date().toISOString()
                 };
 
-                // Save to localStorage
-                addBooking(bookingData);
+                // Save to Firebase
+                const bookingsRef = database.ref(BOOKINGS_PATH);
+                bookingsRef.child(bookingData.id).set(bookingData).then(() => {
+                    // Play notification chime
+                    playNotificationChime();
 
-                // Save current booking reference for "View Booking" feature
-                localStorage.setItem('my_current_booking', JSON.stringify({
-                    id: bookingData.id,
-                    name: bookingData.name,
-                    phone: bookingData.phone
-                }));
+                    // Send email notification
+                    sendEmailNotification(bookingData);
 
-                // Play notification chime in doctor tabs
-                playNotificationChime();
+                    // Broadcast to other tabs
+                    const bc = new BroadcastChannel('clinic_zone_sync');
+                    bc.postMessage('new-booking');
 
-                // Send email notification (will silently skip if EmailJS empty)
-                sendEmailNotification(bookingData);
+                    // Show Success
+                    bookingForm.classList.add('hidden');
+                    successBox.classList.remove('hidden');
+                    navViewBtn.classList.remove('hidden');
 
-                // Broadcast to other tabs via BroadcastChannel
-                bc.postMessage('new-booking');
-
-                // Show Success
-                bookingForm.classList.add('hidden');
-                successBox.classList.remove('hidden');
-                navViewBtn.classList.remove('hidden');
+                    // Check existing booking for slot locking
+                    checkExistingBooking();
+                }).catch(err => {
+                    console.error('Firebase error:', err);
+                    alert('حدث خطأ في حفظ الحجز. يرجى المحاولة مرة أخرى.');
+                });
             });
         }
 
@@ -271,10 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const stored = localStorage.getItem('my_current_booking');
                 if (stored) {
                     const { id } = JSON.parse(stored);
-                    removeBooking(id);
-                    localStorage.removeItem('my_current_booking');
+                    database.ref(BOOKINGS_PATH).child(id).update({ status: 'ملغي' }).then(() => {
+                        localStorage.removeItem('my_current_booking');
+                        showForm();
+                    }).catch(err => console.error('Error cancelling booking:', err));
                 }
-                showForm();
             });
         }
 
@@ -284,10 +338,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function showForm() {
-            patientBookingForm.reset();
+            const form = document.getElementById('patient-booking-form');
+            const successBox = document.getElementById('patient-booking-success');
+            const detailsCard = document.getElementById('patient-booking-details');
+            const navViewBtn = document.getElementById('nav-view-booking-btn');
+
+            form.reset();
             successBox.classList.add('hidden');
             detailsCard.classList.add('hidden');
-            bookingForm.classList.remove('hidden');
+            form.classList.remove('hidden');
             navViewBtn.classList.add('hidden');
             localStorage.removeItem('my_current_booking');
         }
@@ -300,28 +359,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const { id, name, phone } = JSON.parse(stored);
 
-            const bookings = getBookings();
-            const booking = bookings.find(b => b.id === id);
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.child(id).once('value', (snapshot) => {
+                const booking = snapshot.val();
 
-            if (booking) {
-                // Populate details card
-                document.getElementById('det-name').textContent = booking.name;
-                document.getElementById('det-phone').textContent = booking.phone;
-                document.getElementById('det-date').textContent = formatDate(booking.date);
-                document.getElementById('det-time').textContent = booking.time;
-                document.getElementById('det-type').textContent = booking.visitType;
+                if (booking) {
+                    // Populate details card
+                    document.getElementById('det-name').textContent = booking.name;
+                    document.getElementById('det-phone').textContent = booking.phone;
+                    document.getElementById('det-date').textContent = formatDate(booking.date);
+                    document.getElementById('det-time').textContent = booking.time;
+                    document.getElementById('det-type').textContent = booking.visitType;
 
-                const statusEl = document.getElementById('det-status');
-                statusEl.textContent = booking.status;
-                statusEl.className = 'status-badge ' +
-                    (booking.status === 'مؤكد' ? 'status-confirmed' :
-                     booking.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
+                    const statusEl = document.getElementById('det-status');
+                    statusEl.textContent = booking.status;
+                    statusEl.className = 'status-badge ' +
+                        (booking.status === 'مؤكد' ? 'status-confirmed' :
+                         booking.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
 
-                successBox.classList.add('hidden');
-                detailsCard.classList.remove('hidden');
-            } else {
-                alert('تعذر تحميل تفاصيل الحجز.');
-            }
+                    // Scroll to booking details with smooth behavior
+                    const detailsCard = document.getElementById('patient-booking-details');
+                    detailsCard.scrollIntoView({ behavior: 'smooth' });
+
+                    successBox.classList.add('hidden');
+                    detailsCard.classList.remove('hidden');
+                } else {
+                    alert('تعذر تحميل تفاصيل الحجز.');
+                }
+            });
         }
 
         function checkExistingBooking() {
@@ -329,69 +394,217 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!stored) return;
 
             const { id, name, phone } = JSON.parse(stored);
-            const bookings = getBookings();
-            const booking = bookings.find(b => b.id === id && b.name === name && b.phone === phone);
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.child(id).once('value', (snapshot) => {
+                const booking = snapshot.val();
 
-            if (booking) {
-                navViewBtn.classList.remove('hidden');
-            } else {
-                localStorage.removeItem('my_current_booking');
+                if (booking && booking.name === name && booking.phone === phone) {
+                    navViewBtn.classList.remove('hidden');
+                } else {
+                    localStorage.removeItem('my_current_booking');
+                }
+            });
+        }
+
+        function updateLiveQueueOnNewBooking() {
+            // Read current queue and increment if needed
+            database.ref(QUEUE_PATH).transaction(current => {
+                return (current || 1) + 1;
+            });
+        }
+
+        // ==========================================
+        // LIVE STATUS LISTENER FOR PATIENT PAGE (Fix 3)
+        // ==========================================
+        // Attach real-time listener on /bookings/{id} when my_current_booking exists
+        const storedBooking = localStorage.getItem('my_current_booking');
+        if (storedBooking) {
+            try {
+                const { id } = JSON.parse(storedBooking);
+                const bookingRef = database.ref(BOOKINGS_PATH).child(id);
+                bookingRef.on('value', (snapshot) => {
+                    const booking = snapshot.val();
+                    if (booking) {
+                        const statusEl = document.getElementById('det-status');
+                        if (statusEl) {
+                            statusEl.textContent = booking.status;
+                            statusEl.className = 'status-badge ' +
+                                (booking.status === 'مؤكد' ? 'status-confirmed' :
+                                 booking.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Error setting up live status listener:', e);
             }
         }
     }
 
     // ==========================================
-    // DASHBOARD RENDERING (localStorage-based) - defined in shared scope for hoisting
+    // MEDICAL HISTORY MODAL FUNCTIONS (Global)
     // ==========================================
-    function renderDashboard() {
-        if (!document.body.classList.contains('doctor-page')) return;
+    window.openMedicalHistoryModal = function(patientName, patientPhone) {
+        const modal = document.getElementById('medical-history-modal');
+        const nameEl = document.getElementById('mh-patient-name');
+        const phoneEl = document.getElementById('mh-patient-phone');
+        const countEl = document.getElementById('mh-patient-count');
 
-        const bookings = getBookings();
-        const tbody = document.getElementById('bookings-table-body');
-        if (!tbody) return;
+        if (modal && nameEl && phoneEl) {
+            nameEl.textContent = patientName;
+            phoneEl.textContent = patientPhone;
+            modal.classList.remove('hidden');
 
-        tbody.innerHTML = '';
+            // Load prescription history
+            loadPrescriptionHistory(patientName, patientPhone);
+            // Load booking history
+            loadBookingHistory(patientName, patientPhone);
 
-        // Update Stats
-        document.getElementById('stat-total').innerText = bookings.length;
-        document.getElementById('stat-pending').innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
-        document.getElementById('stat-confirmed').innerText = bookings.filter(b => b.status === 'مؤكد').length;
-        document.getElementById('stat-followup').innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
-
-        if (bookings.length === 0) {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 2rem; color: var(--muted);">لا توجد حجوزات حالياً</td>`;
-            tbody.appendChild(tr);
-            return;
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+                });
+            });
         }
+    };
 
-        bookings.forEach(b => {
-            const tr = document.createElement('tr');
+    window.closeMedicalHistoryModal = function() {
+        const modal = document.getElementById('medical-history-modal');
+        if (modal) modal.classList.add('hidden');
+    };
 
-            const statusClass = b.status === 'مؤكد' ? 'status-confirmed' :
-                                (b.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
+    function normalizePhone(phone) {
+        let clean = phone.replace(/\D/g, '');
+        if (clean.startsWith('01')) clean = clean.substring(1);
+        if (clean.startsWith('20')) clean = clean.substring(2);
+        return clean;
+    }
 
-            // Format phone with WhatsApp prefix
-            let displayPhone = b.phone;
-            if (displayPhone.startsWith('01')) displayPhone = '20' + displayPhone.slice(2);
+    function loadPrescriptionHistory(patientName, patientPhone) {
+        const container = document.getElementById('prescriptions-list');
+        if (!container) return;
 
-            tr.innerHTML = `
-                <td><strong>${b.name}</strong></td>
-                <td>${b.date}<br><small>${b.time}</small></td>
-                <td><span style="color:var(--primary-dark); font-weight:700;">${b.visitType}</span></td>
-                <td><a href="#" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}، نود تأكيد حجزك في كلينيك زون'); return false;">${displayPhone}</a></td>
-                <td><span class="status-badge ${statusClass}">${b.status}</span></td>
-                <td>
-                    <div class="action-btns">
-                        <button class="action-btn btn-confirm" onclick="updateBookingStatus('${b.id}', 'مؤكد')" title="تأكيد"><i class="fa-solid fa-check"></i></button>
-                        <button class="action-btn btn-cancel" onclick="updateBookingStatus('${b.id}', 'ملغي')" title="إلغاء"><i class="fa-solid fa-xmark"></i></button>
-                        <button class="action-btn btn-whatsapp" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}')"><i class="fa-brands fa-whatsapp"></i></button>
-                        <button class="action-btn btn-primary" onclick="selectForRx('${b.id}')" style="width:auto; padding:0 10px;" title="روشتة">روشتة</button>
+        const normalizedPhone = normalizePhone(patientPhone);
+        const prescRef = database.ref(PRESCRIPTIONS_PATH).child(normalizedPhone);
+
+        prescRef.once('value', (snapshot) => {
+            const prescriptions = [];
+            snapshot.forEach((child) => {
+                const data = child.val();
+                prescriptions.push({ id: child.key, ...data });
+            });
+
+            if (prescriptions.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-muted);">لا توجد وصفات طبية سابقة لهذه المريضة</div>';
+                document.getElementById('mh-patient-count').textContent = '٠ وصفات';
+                return;
+            }
+
+            // Sort by date descending
+            prescriptions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            document.getElementById('mh-patient-count').textContent = prescriptions.length + ' وصفات';
+
+            container.innerHTML = '';
+            prescriptions.forEach(p => {
+                const date = new Date(p.timestamp).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const div = document.createElement('div');
+                div.className = 'prescription-item';
+                div.innerHTML = `
+                    <div class="presc-item-header">
+                        <span class="presc-item-date">${date}</span>
+                        <div class="presc-item-actions">
+                            <button class="btn btn-outline btn-sm" onclick="reprintPrescription('${normalizedPhone}', '${p.id}')"><i class="fa-solid fa-print"></i> إعادة طباعة</button>
+                            <button class="btn btn-whatsapp btn-sm" onclick="resendPrescriptionWhatsApp('${patientPhone}', '${p.id}')"><i class="fa-brands fa-whatsapp"></i> إرسال واتساب</button>
+                        </div>
                     </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
+                    <div class="presc-item-diagnosis"><strong>التشخيص:</strong> ${p.diagnosis || 'غير محدد'}</div>
+                    <div class="presc-item-meds">${p.meds || 'لا توجد أدوية'}</div>
+                `;
+                container.appendChild(div);
+            });
         });
+    }
+
+    function loadBookingHistory(patientName, patientPhone) {
+        const container = document.getElementById('bookings-list');
+        if (!container) return;
+
+        const bookingsRef = database.ref(BOOKINGS_PATH);
+        bookingsRef.orderByChild('timestamp').once('value', (snapshot) => {
+            const bookings = [];
+            snapshot.forEach((child) => {
+                const data = child.val();
+                if (data.name === patientName && data.phone === patientPhone) {
+                    bookings.push({ id: child.key, ...data });
+                }
+            });
+
+            if (bookings.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-muted);">لا توجد حجوزات سابقة لهذه المريضة</div>';
+                return;
+            }
+
+            // Sort by date descending
+            bookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            container.innerHTML = '';
+            bookings.forEach(b => {
+                const statusClass = b.status === 'مؤكد' ? 'status-confirmed' :
+                                    (b.status === 'ملغي' || b.status === 'cancelled' ? 'status-cancelled' : 'status-pending');
+                const dateParts = b.date.split('-');
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+                const div = document.createElement('div');
+                div.className = 'booking-history-item';
+                div.innerHTML = `
+                    <div class="booking-history-info">
+                        <span class="booking-history-date">${formattedDate} - ${b.time}</span>
+                        <span class="booking-history-type">${b.visitType}</span>
+                    </div>
+                    <span class="status-badge ${statusClass}">${b.status}</span>
+                `;
+                container.appendChild(div);
+            });
+        });
+    }
+
+    window.reprintPrescription = function(normalizedPhone, prescriptionId) {
+        const prescRef = database.ref(PRESCRIPTIONS_PATH).child(normalizedPhone).child(prescriptionId);
+        prescRef.once('value', (snapshot) => {
+            const p = snapshot.val();
+            if (p) {
+                document.getElementById('p-print-name').innerText = p.name;
+                document.getElementById('p-print-date').innerText = new Date(p.timestamp).toLocaleDateString('ar-EG');
+                document.getElementById('p-print-diagnosis').innerText = p.diagnosis || 'حالة طبية عامة';
+                document.getElementById('p-print-meds').innerText = p.meds;
+                // Generate QR code
+                generatePrescriptionQR();
+                window.print();
+            }
+        });
+    };
+
+    window.resendPrescriptionWhatsApp = function(phone, prescriptionId) {
+        const normalizedPhone = normalizePhone(phone);
+        const prescRef = database.ref(PRESCRIPTIONS_PATH).child(normalizedPhone).child(prescriptionId);
+        prescRef.once('value', (snapshot) => {
+            const p = snapshot.val();
+            if (p) {
+                const msg = `روشتة طبية من كلينيك زون\nالمريضة: ${p.name}\nالتشخيص: ${p.diagnosis || 'حالة طبية عامة'}\nالأدوية:\n${p.meds}\nمع تمنياتنا بالشفاء العاجل.`;
+                openWhatsApp(phone, msg);
+            }
+        });
+    };
+
+    function generatePrescriptionQR() {
+        const qrImg = document.getElementById('prescription-qr');
+        if (qrImg) {
+            qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=https://ahmednaksh03-cloud.github.io/clinic/patient.html';
+        }
     }
 
     // ==========================================
@@ -422,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const pwd = document.getElementById('login-password').value;
-                if (pwd === PASSWORD) {
+                if (pwd === '1234') {
                     sessionStorage.setItem('doctor_logged_in', 'true');
                     loginOverlay.classList.add('hidden');
                     renderDashboard();
@@ -440,46 +653,56 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Refresh button - hard cache-busting reload
+        // Refresh button
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => {
-                location.reload(true); // Force reload from server (Ctrl+Shift+R equivalent)
+                location.reload(true);
             });
         }
 
-        // Populate patient dropdown with unique names from bookings
+        // Populate patient dropdown with unique names from Firebase
         function populatePatientDropdown() {
             if (!prescNameSelect) return;
-            const bookings = getBookings();
-            // Get unique patients by name+phone
-            const uniquePatients = [];
-            const seen = new Set();
-            bookings.forEach(b => {
-                const key = b.name + '|' + b.phone;
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    uniquePatients.push({ name: b.name, phone: b.phone });
+
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.orderByChild('timestamp').once('value', (snapshot) => {
+                const bookings = [];
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    bookings.push({ id: child.key, ...data });
+                });
+
+                // Get unique patients by name+phone
+                const uniquePatients = [];
+                const seen = new Set();
+                bookings.forEach(b => {
+                    const key = b.name + '|' + b.phone;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        uniquePatients.push({ name: b.name, phone: b.phone, id: b.id });
+                    }
+                });
+
+                // Preserve currently selected value
+                const currentValue = prescNameSelect.value;
+
+                // Clear and repopulate
+                prescNameSelect.innerHTML = '<option value="" disabled selected>اختر مريضة من الجدول</option>';
+                uniquePatients.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.name;
+                    opt.dataset.phone = p.phone;
+                    opt.dataset.id = p.id;
+                    opt.textContent = p.name;
+                    prescNameSelect.appendChild(opt);
+                });
+
+                // Restore selection if still valid
+                if (currentValue && uniquePatients.some(p => p.name === currentValue)) {
+                    prescNameSelect.value = currentValue;
+                    prescPhoneInput.value = uniquePatients.find(p => p.name === currentValue).phone;
                 }
             });
-
-            // Preserve currently selected value
-            const currentValue = prescNameSelect.value;
-
-            // Clear and repopulate
-            prescNameSelect.innerHTML = '<option value="" disabled selected>اختر مريضة من الجدول</option>';
-            uniquePatients.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.name;
-                opt.dataset.phone = p.phone;
-                opt.textContent = p.name;
-                prescNameSelect.appendChild(opt);
-            });
-
-            // Restore selection if still valid
-            if (currentValue && uniquePatients.some(p => p.name === currentValue)) {
-                prescNameSelect.value = currentValue;
-                prescPhoneInput.value = uniquePatients.find(p => p.name === currentValue).phone;
-            }
         }
 
         // Auto-fill phone when patient selected from dropdown
@@ -504,20 +727,141 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // Prescription print and save
         document.getElementById('print-presc-btn').addEventListener('click', () => {
             const name = prescNameSelect.value;
+            const phone = prescPhoneInput.value;
             const meds = prescMedsArea.value;
             const diagnosis = document.getElementById('presc-diagnosis').value;
 
-            if (!name || !meds) return alert('يرجى إدخال اسم المريضة والأدوية firstly');
+            if (!name || !meds) return alert('يرجى إدخال اسم المريضة والأدوية أولاً');
 
-            document.getElementById('p-print-name').innerText = name;
-            document.getElementById('p-print-date').innerText = new Date().toLocaleDateString('ar-EG');
-            document.getElementById('p-print-diagnosis').innerText = diagnosis || 'حالة طبية عامة';
-            document.getElementById('p-print-meds').innerText = meds;
+            // Save to Firebase prescriptions
+            const prescriptionData = {
+                name: name,
+                phone: phone,
+                diagnosis: diagnosis || 'حالة طبية عامة',
+                meds: meds,
+                timestamp: new Date().toISOString()
+            };
 
-            window.print();
+            const normalizedPhone = normalizePhone(phone);
+            const prescRef = database.ref(PRESCRIPTIONS_PATH).child(normalizedPhone);
+            prescRef.push(prescriptionData).then(() => {
+                // Play notification chime
+                playNotificationChime();
+
+                // Broadcast to other tabs
+                const bc = new BroadcastChannel('clinic_zone_sync');
+                bc.postMessage('new-prescription');
+
+                // Update print area and print
+                document.getElementById('p-print-name').innerText = name;
+                document.getElementById('p-print-date').innerText = new Date().toLocaleDateString('ar-EG');
+                document.getElementById('p-print-diagnosis').innerText = diagnosis || 'حالة طبية عامة';
+                document.getElementById('p-print-meds').innerText = meds;
+
+                // Generate QR code
+                generatePrescriptionQR();
+
+                window.print();
+
+                // Update prescription dropdown if modal is open
+                if (!document.getElementById('medical-history-modal').classList.contains('hidden')) {
+                    const patientName = document.getElementById('mh-patient-name').textContent;
+                    const patientPhone = document.getElementById('mh-patient-phone').textContent;
+                    if (patientName === name && patientPhone === phone) {
+                        loadPrescriptionHistory(patientName, patientPhone);
+                    }
+                }
+            }).catch(err => {
+                console.error('Error saving prescription:', err);
+                alert('حدث خطأ في حفظ الروشتة');
+            });
         });
+
+        // Medical History Modal: Print Full Record button
+        const printFullRecordBtn = document.getElementById('print-full-record-btn');
+        if (printFullRecordBtn) {
+            printFullRecordBtn.addEventListener('click', () => {
+                const patientName = document.getElementById('mh-patient-name').textContent;
+                const patientPhone = document.getElementById('mh-patient-phone').textContent;
+                if (!patientName || !patientPhone) return;
+
+                const normalizedPhone = normalizePhone(patientPhone);
+                const prescRef = database.ref(PRESCRIPTIONS_PATH).child(normalizedPhone);
+
+                prescRef.once('value', (snapshot) => {
+                    const prescriptions = [];
+                    snapshot.forEach((child) => {
+                        const data = child.val();
+                        prescriptions.push({ id: child.key, ...data });
+                    });
+
+                    if (prescriptions.length === 0) {
+                        alert('لا توجد وصفات طبية للطباعة');
+                        return;
+                    }
+
+                    // Sort by date ascending (chronological)
+                    prescriptions.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                    // Build combined medical record content
+                    let combinedDiagnosis = '';
+                    let combinedMeds = '';
+                    let visitCount = 1;
+
+                    prescriptions.forEach(p => {
+                        const date = new Date(p.timestamp).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                        combinedDiagnosis += `--- زيارة ${visitCount} (${date}) ---\n${p.diagnosis || 'غير محدد'}\n\n`;
+                        combinedMeds += `--- زيارة ${visitCount} (${date}) ---\n${p.meds || 'لا توجد أدوية'}\n\n`;
+                        visitCount++;
+                    });
+
+                    // Populate print area with complete record
+                    document.getElementById('p-print-name').innerText = patientName;
+                    document.getElementById('p-print-date').innerText = new Date().toLocaleDateString('ar-EG');
+                    document.getElementById('p-print-diagnosis').innerText = combinedDiagnosis.trim();
+                    document.getElementById('p-print-meds').innerText = combinedMeds.trim();
+
+                    // Generate QR code
+                    generatePrescriptionQR();
+
+                    // Print
+                    window.print();
+                }).catch(err => {
+                    console.error('Error loading prescriptions for full record:', err);
+                    alert('حدث خطأ في تحميل السجل الطبي');
+                });
+            });
+        }
+
+        // Medical History Modal: New Prescription button
+        const newPrescriptionBtn = document.getElementById('new-prescription-btn');
+        if (newPrescriptionBtn) {
+            newPrescriptionBtn.addEventListener('click', () => {
+                const patientName = document.getElementById('mh-patient-name').textContent;
+                const patientPhone = document.getElementById('mh-patient-phone').textContent;
+                if (!patientName || !patientPhone) return;
+
+                // Close modal
+                closeMedicalHistoryModal();
+
+                // Select patient in prescription dropdown
+                const prescNameSelect = document.getElementById('presc-name');
+                const prescPhoneInput = document.getElementById('presc-phone');
+                if (prescNameSelect) {
+                    prescNameSelect.value = patientName;
+                    prescNameSelect.dispatchEvent(new Event('change'));
+                }
+                if (prescPhoneInput) {
+                    prescPhoneInput.value = patientPhone;
+                }
+
+                // Scroll to prescription section
+                document.getElementById('prescription-section').scrollIntoView({ behavior: 'smooth' });
+            });
+        }
 
         document.getElementById('whatsapp-presc-btn').addEventListener('click', () => {
             const name = prescNameSelect.value;
@@ -530,46 +874,295 @@ document.addEventListener('DOMContentLoaded', () => {
             const msg = `روشتة طبية من كلينيك زون\nالمريضة: ${name}\nالتشخيص: ${diagnosis || 'حالة طبية عامة'}\nالأدوية:\n${meds}\nمع تمنياتنا بالشفاء العاجل.`;
             openWhatsApp(phone, msg);
         });
+
+        // ==========================================
+        // REAL-TIME FIREBASE LISTENER FOR DOCTOR DASHBOARD
+        // ==========================================
+        // Listen for booking status changes from patient page
+        const bc = new BroadcastChannel('clinic_zone_sync');
+        bc.onmessage = (event) => {
+            if (event.data === 'new-booking' || event.data === 'refresh') {
+                if (window.renderDashboard) {
+                    window.renderDashboard();
+                }
+            }
+        };
+
+        // Storage event listener for cross-tab sync
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'my_current_booking') {
+                if (window.renderDashboard) {
+                    window.renderDashboard();
+                }
+            }
+        });
+
+        // Real-time Firebase listener for bookings - replaces polling
+        let bookingsListenerAttached = false;
+        function attachBookingsListener() {
+            if (bookingsListenerAttached) return;
+            bookingsListenerAttached = true;
+
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.orderByChild('timestamp').on('value', (snapshot) => {
+                if (!document.body.classList.contains('doctor-page')) return;
+                if (window.renderDashboard) {
+                    window.renderDashboard();
+                }
+            });
+        }
+
+        // Render Dashboard with Firebase data
+        window.renderDashboard = function() {
+            if (!document.body.classList.contains('doctor-page')) return;
+
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.orderByChild('timestamp').once('value', (snapshot) => {
+                const bookings = [];
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    bookings.push({ id: child.key, ...data });
+                });
+
+                // Update Stats
+                document.getElementById('stat-total').innerText = bookings.length;
+                document.getElementById('stat-pending').innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
+                document.getElementById('stat-confirmed').innerText = bookings.filter(b => b.status === 'مؤكد').length;
+                document.getElementById('stat-followup').innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
+
+                const tbody = document.getElementById('bookings-table-body');
+                tbody.innerHTML = '';
+
+                // Define minimum height per row for consistency
+                const minRowHeight = 5; // At least 5 full rows
+
+                if (bookings.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 2rem; color: var(--muted);">لا توجد حجوزات حالياً</td>`;
+                    tbody.appendChild(tr);
+                    // Ensure minimum height
+                    tbody.style.minHeight = `${minRowHeight * 50}px`;
+                    return;
+                }
+
+                // Ensure table can display at least 5 rows
+                tbody.style.minHeight = 'auto';
+                const calculatedMinHeight = Math.max(bookings.length * 38 + 20, minRowHeight * 50);
+                tbody.style.minHeight = `${calculatedMinHeight}px`;
+
+                // Store all bookings for filtering
+                window.allBookings = bookings;
+
+                // Apply current filter
+                applyBookingFilters(bookings);
+            });
+        };
+
+        // Search and filter functionality
+        function applyBookingFilters(bookings) {
+            const searchInput = document.getElementById('search-patient');
+            const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            const filterAll = document.getElementById('filter-all');
+            const filterToday = document.getElementById('filter-today');
+            const filterPending = document.getElementById('filter-pending');
+
+            let activeFilter = 'all';
+            if (filterToday?.classList.contains('btn-primary')) activeFilter = 'today';
+            else if (filterPending?.classList.contains('btn-primary')) activeFilter = 'pending';
+
+            let filtered = bookings;
+
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(b =>
+                    b.name.toLowerCase().includes(searchTerm) ||
+                    b.phone.includes(searchTerm)
+                );
+            }
+
+            // Apply status/date filter
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (activeFilter === 'today') {
+                filtered = filtered.filter(b => b.date === todayStr);
+            } else if (activeFilter === 'pending') {
+                filtered = filtered.filter(b => b.status === 'قيد الانتظار');
+            }
+
+            renderBookingsTable(filtered);
+        }
+
+        function renderBookingsTable(bookings) {
+            const tbody = document.getElementById('bookings-table-body');
+            tbody.innerHTML = '';
+
+            const minRowHeight = 5;
+
+            if (bookings.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 2rem; color: var(--muted);">لا توجد حجوزات مطابقة</td>`;
+                tbody.appendChild(tr);
+                tbody.style.minHeight = `${minRowHeight * 50}px`;
+                return;
+            }
+
+            tbody.style.minHeight = 'auto';
+            const calculatedMinHeight = Math.max(bookings.length * 38 + 20, minRowHeight * 50);
+            tbody.style.minHeight = `${calculatedMinHeight}px`;
+
+            bookings.forEach(b => {
+                const statusClass = b.status === 'مؤكد' ? 'status-confirmed' :
+                                    (b.status === 'ملغي' || b.status === 'cancelled' ? 'status-cancelled' : 'status-pending');
+
+                // Format phone with WhatsApp prefix
+                let displayPhone = b.phone;
+                if (displayPhone.startsWith('01')) displayPhone = '20' + displayPhone.slice(2);
+
+                // Format date display
+                const dateParts = b.date.split('-');
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+                const tr = document.createElement('tr');
+
+                tr.innerHTML = `
+                    <td><strong>${b.name}</strong></td>
+                    <td>${formattedDate}<br><small>${b.time}</small></td>
+                    <td><span style="color:var(--primary-dark); font-weight:700;">${b.visitType}</span></td>
+                    <td><a href="#" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}، نود تأكيد حجزك في كلينيك زون'); return false;">${displayPhone}</a></td>
+                    <td><span class="status-badge ${statusClass}">${b.status}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="action-btn btn-confirm" onclick="updateBookingStatus('${b.id}', 'مؤكد')" title="تأكيد"><i class="fa-solid fa-check"></i></button>
+                            <button class="action-btn btn-cancel" onclick="updateBookingStatus('${b.id}', 'ملغي')" title="إلغاء"><i class="fa-solid fa-xmark"></i></button>
+                            <button class="action-btn btn-whatsapp" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}')"><i class="fa-brands fa-whatsapp"></i></button>
+                            <button class="action-btn btn-primary" onclick="selectForRx('${b.id}')" style="width:auto; padding:0 10px;" title="روشتة">روشتة</button>
+                            <button class="action-btn btn-secondary" onclick="openMedicalHistoryModal('${b.name}', '${b.phone}')" style="width:auto; padding:0 10px;" title="السجل الطبي"><i class="fa-solid fa-file-medical"></i></button>
+                            <button class="action-btn btn-danger" onclick="deleteBooking('${b.id}')" title="حذف" style="background: var(--danger); border-color: var(--danger); width:auto; padding:0 10px;"> حذف </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Initialize search and filter event listeners
+        function initSearchAndFilters() {
+            const searchInput = document.getElementById('search-patient');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    if (window.allBookings) {
+                        applyBookingFilters(window.allBookings);
+                    }
+                });
+            }
+
+            const filterAll = document.getElementById('filter-all');
+            const filterToday = document.getElementById('filter-today');
+            const filterPending = document.getElementById('filter-pending');
+
+            function setActiveFilter(btn) {
+                [filterAll, filterToday, filterPending].forEach(b => {
+                    if (b) {
+                        b.classList.remove('btn-primary');
+                        b.classList.add('btn-outline');
+                    }
+                });
+                if (btn) {
+                    btn.classList.remove('btn-outline');
+                    btn.classList.add('btn-primary');
+                }
+                if (window.allBookings) {
+                    applyBookingFilters(window.allBookings);
+                }
+            }
+
+            if (filterAll) filterAll.addEventListener('click', () => setActiveFilter(filterAll));
+            if (filterToday) filterToday.addEventListener('click', () => setActiveFilter(filterToday));
+            if (filterPending) filterPending.addEventListener('click', () => setActiveFilter(filterPending));
+
+            // Set default active filter
+            if (filterAll) {
+                filterAll.classList.remove('btn-outline');
+                filterAll.classList.add('btn-primary');
+            }
+        }
+
+        // Update booking status in Firebase
+        window.updateBookingStatus = function(id, newStatus) {
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.child(id).update({ status: newStatus }).then(() => {
+                // Play notification chime
+                playNotificationChime();
+
+                // Broadcast to update patient page
+                const bc = new BroadcastChannel('clinic_zone_sync');
+                bc.postMessage('refresh');
+
+                // Re-render dashboard
+                if (window.renderDashboard) {
+                    window.renderDashboard();
+                }
+            }).catch(err => console.error('Error updating booking status:', err));
+        };
+
+        // Delete booking from Firebase
+        window.deleteBooking = function(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا الحجز؟ هذا سيحرر الوقت المحجوز.')) return;
+
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.child(id).remove().then(() => {
+                // Play notification chime
+                playNotificationChime();
+
+                // Broadcast to update
+                const bc = new BroadcastChannel('clinic_zone_sync');
+                bc.postMessage('refresh');
+
+                // Re-render dashboard
+                if (window.renderDashboard) {
+                    window.renderDashboard();
+                }
+
+                // Show success message
+                alert('تم حذف الحجز بنجاح and تم تحرير الوقت.');
+            }).catch(err => console.error('Error deleting booking:', err));
+        };
+
+        // Select patient for prescription / open medical history modal
+        window.selectForRx = function(id) {
+            const bookingsRef = database.ref(BOOKINGS_PATH);
+            bookingsRef.child(id).once('value', (snapshot) => {
+                const booking = snapshot.val();
+                if (booking) {
+                    const prescNameSelect = document.getElementById('presc-name');
+                    const prescPhoneInput = document.getElementById('presc-phone');
+                    if (prescNameSelect) {
+                        prescNameSelect.value = booking.name;
+                        // Trigger change event to auto-fill phone
+                        prescNameSelect.dispatchEvent(new Event('change'));
+                    }
+                    if (prescPhoneInput) {
+                        prescPhoneInput.value = booking.phone;
+                    }
+                    // Open medical history modal for this patient
+                    if (typeof openMedicalHistoryModal === 'function') {
+                        openMedicalHistoryModal(booking.name, booking.phone);
+                    }
+                    document.getElementById('prescription-section').scrollIntoView();
+                }
+            });
+        };
+
+        // Attach real-time listener
+        attachBookingsListener();
+
+        // Initialize search and filters
+        initSearchAndFilters();
     }
 
-    window.updateBookingStatus = function(id, newStatus) {
-        const bookings = getBookings().map(b => {
-            if (b.id === id) { b.status = newStatus; playNotificationChime(); }
-            return b;
-        });
-        saveBookings(bookings);
-        renderDashboard();
-        bc.postMessage('refresh');
-    };
-
-    window.selectForRx = function(id) {
-        const bookings = getBookings();
-        const booking = bookings.find(b => b.id === id);
-        if (booking) {
-            const prescNameSelect = document.getElementById('presc-name');
-            const prescPhoneInput = document.getElementById('presc-phone');
-            if (prescNameSelect) {
-                prescNameSelect.value = booking.name;
-                // Trigger change event to auto-fill phone
-                prescNameSelect.dispatchEvent(new Event('change'));
-            }
-            if (prescPhoneInput) {
-                prescPhoneInput.value = booking.phone;
-            }
-            document.getElementById('prescription-section').scrollIntoView();
-        }
-    };
-
     // ==========================================
-    // POLLING FOR DOCTOR DASHBOARD (fallback sync)
+    // DOCTOR IMAGE FALLBACK
     // ==========================================
-    window.startPolling = function() {
-        // The 1-second interval is already running globally
-        // This function exists for backward compatibility
-        // The dashboard updates in real-time via storage event and interval
-    };
-
-    // Doctor Image Fallback
     window.handleDoctorImgFallback = function(img) {
         const fallbacks = ['doctor.jpeg', 'doctor.jpg', 'doctor.png'];
         const current = img.src.split('/').pop();
@@ -582,7 +1175,4 @@ document.addEventListener('DOMContentLoaded', () => {
             parent.innerHTML = '<i class="fa-solid fa-user-doctor" style="font-size: 4rem; color: var(--primary);"></i>';
         }
     };
-
-    // Start the 1-second interval sync
-    // Already defined above in the syncInterval variable
 });

@@ -20,11 +20,15 @@
         <div class="container header-container">
             <div class="logo-area">
                 <div class="logo-icon">
-                    <i class="fa-solid fa-heart-pulse"></i>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
                 </div>
                 <div class="logo-text">
-                    <h1>كلينيك زون</h1>
-                    <span>لأمراض النساء والتوليد وعلاج تأخر الإنجاب</span>
+                    <h1>Clinic Zone</h1>
+                    <span>Obstetrics & Gynecology</span>
                 </div>
             </div>
             <div class="header-contact-quick">
@@ -37,7 +41,7 @@
 
     <main class="main-content">
 
-        <!-- Hero Section -->
+        <!-- Hero Section with Clinic Interior Banner -->
         <section class="hero-section">
             <div class="container hero-container">
                 <div class="hero-content">
@@ -50,21 +54,24 @@
                     </div>
                 </div>
 
-                <div class="hero-card">
-                    <div class="doctor-profile-card">
-                        <div class="doc-avatar">
-                            <img src="doctor.jpeg" id="patient-doc-img" alt="د. أحمد السيد" onerror="handleDoctorImgFallback(this)">
-                        </div>
-                        <h3>د. أحمد السيد</h3>
-                        <p class="doc-title">استشاري أمراض النساء والتوليد وعلاج تأخر الإنجاب</p>
-                        <ul class="doc-credentials">
-                            <li><i class="fa-solid fa-circle-check"></i> زميل المعهد القومي للنساء والتوليد</li>
-                            <li><i class="fa-solid fa-circle-check"></i> جراحات المناظير النسائية المتقدمة</li>
-                            <li><i class="fa-solid fa-circle-check"></i> خبرة طبية متميزة أكثر من 15 عاماً</li>
-                        </ul>
-                        <div class="clinic-hours">
-                            <i class="fa-regular fa-clock"></i> مواعيد العيادة: السبت - الخميس (٤ م - ١٠ م)
-                        </div>
+                <!-- Clinic Interior Hero Banner with CSS Gradient Fallback -->
+                <div class="hero-banner" style="grid-column: 1 / -1; height: 300px; background: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('https://images.unsplash.com/photo-1581091013493-6b7e0f9d6bd8?auto=format&fit=crop&w=1200&q=80'); background-size: cover; background-position: center; border-radius: 20px; margin-top: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden;">
+                    <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); opacity: 0.3;"></div>
+                </div>
+
+                <div class="doctor-profile-card">
+                    <div class="doc-avatar">
+                        <img src="doctor.jpeg" id="patient-doc-img" alt="د. أحمد السيد" onerror="handleDoctorImgFallback(this)">
+                    </div>
+                    <h3>د. أحمد السيد</h3>
+                    <p class="doc-title">استشاري أمراض النساء والتوليد وعلاج تأخر الإنجاب</p>
+                    <ul class="doc-credentials">
+                        <li><i class="fa-solid fa-circle-check"></i> زميل المعهد القومي للنساء والتوليد</li>
+                        <li><i class="fa-solid fa-circle-check"></i> جراحات المناظير النسائية المتقدمة</li>
+                        <li><i class="fa-solid fa-circle-check"></i> خبرة طبية متميزة أكثر من 15 عاماً</li>
+                    </ul>
+                    <div class="clinic-hours">
+                        <i class="fa-regular fa-clock"></i> مواعيد العيادة: السبت - الخميس (٤ م - ١٠ م)
                     </div>
                 </div>
             </div>
@@ -116,7 +123,7 @@
                     <div class="service-card-body">
                         <div class="service-header-icon"><i class="fa-solid fa-scissors"></i></div>
                         <h3>عمليات اليوم الواحد الخفيفة</h3>
-                        <p>إجراء التدخلات الجراحية النسائية البسيطة والمناظير بأعلى معايير التعقيم والراحة دون الحاجة للإقامة بالمستشفى.</p>
+                        <p>إجراء التدخلات الجراحية النسائية البسيطة والمناظر بأعلى معايير التعقيم والراحة دون الحاجة للإقامة بالمستشفى.</p>
                     </div>
                 </div>
 
@@ -159,6 +166,11 @@
                 </div>
 
                 <div class="booking-wrapper">
+                    <!-- Live Queue Banner -->
+                    <div id="live-queue-banner" class="live-queue-banner" style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; direction: ltr;">
+                        <div style="font-weight: 800; color: #92400e; font-size: 1.2rem;">القائمة الحالية: <span id="queue-number">1</span> - جاري الفحص</div>
+                    </div>
+
                     <!-- Form -->
                     <form id="patient-booking-form" class="booking-form">
                         <div class="form-row">
@@ -260,7 +272,7 @@
     <footer class="clinic-footer">
         <div class="container footer-content">
             <div class="footer-col">
-                <h3>كلينيك زون - لأمراض النساء والتوليد</h3>
+                <h3>Clinic Zone - Obstetrics & Gynecology</h3>
                 <p>صحتك وسلامة طفلك هي رسالتنا وهدفنا الدائم. نجمع بين الخبرة الطبية المرموقة وأحدث التجهيزات لتجربة طبية استثنائية.</p>
             </div>
             <div class="footer-col">
@@ -276,13 +288,15 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>جميع الحقوق محفوظة &copy; 2026 كلينيك زون - د. أحمد السيد</p>
+            <p>جميع الحقوق محفوظة &copy; 2026 Clinic Zone - د. أحمد السيد</p>
         </div>
     </footer>
 
     <!-- EmailJS Browser SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <!-- Firebase Realtime Database v10 Compat Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <!-- App Script -->
     <script src="app.js"></script>
 </body>
-</html>

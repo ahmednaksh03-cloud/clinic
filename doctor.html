@@ -37,10 +37,16 @@
     <header class="dashboard-header">
         <div class="container header-container">
             <div class="logo-area">
-                <div class="logo-icon"><i class="fa-solid fa-user-doctor"></i></div>
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
                 <div class="logo-text">
                     <h1>لوحة التحكم</h1>
-                    <span>كلينيك زون - د. أحمد السيد</span>
+                    <span>Clinic Zone - د. أحمد السيد</span>
                 </div>
             </div>
             <div class="header-actions">
@@ -51,6 +57,16 @@
     </header>
 
     <main class="dashboard-content container">
+
+        <!-- Live Queue Control Bar -->
+        <div id="live-queue-bar" class="live-queue-bar" style="background: #f0fdf4; border: 1px solid #10b981; border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; direction: ltr; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1);">
+            <div style="font-weight: 800; color: #059669; font-size: 1.1rem;">القائمة الحالية: <span id="current-queue-number">1</span> - جاري الفحص</div>
+            <div style="margin-top: 10px; direction: rtl;">
+                <button id="queue-decrement-btn" class="btn btn-outline btn-sm" style="margin-right: 10px;">-</button>
+                <button id="queue-increment-btn" class="btn btn-primary btn-sm">+</button>
+                <button id="queue-reset-btn" class="btn btn-danger btn-sm" style="margin-left: 10px;">إعادة تعيين</button>
+            </div>
+        </div>
 
         <!-- Stats Row -->
         <div class="stats-grid">
@@ -91,6 +107,17 @@
                 <div class="section-header">
                     <h2><i class="fa-solid fa-list-ul"></i> إدارة الحجوزات</h2>
                 </div>
+
+                <!-- Search and Filter Bar -->
+                <div class="table-search-filter" style="margin-bottom: 25px; direction: rtl; gap: 15px;">
+                    <input type="text" id="search-patient" placeholder="بحث باسم المريضة أو الرقم..." style="flex: 1; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 0.9rem; direction: ltr;">
+                    <div style="display: flex; gap: 10px;">
+                        <button id="filter-all" class="btn btn-outline btn-sm">جميع الحجوزات</button>
+                        <button id="filter-today" class="btn btn-outline btn-sm">حجوزات اليوم</button>
+                        <button id="filter-pending" class="btn btn-outline btn-sm">الحجوزات المعلقة</button>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table class="clinic-table">
                         <thead>
@@ -138,16 +165,16 @@
                         <div class="med-chips-container">
                             <label>أدوية شائعة (اضغط للإضافة):</label>
                             <div class="chips-list">
-                                <button type="button" class="med-chip" data-med="Folic Acid 5mg (فوليك أسيد)">فوليك أسيد</button>
-                                <button type="button" class="med-chip" data-med="Duphaston 10mg (دوفاستون)">دوفاستون</button>
-                                <button type="button" class="med-chip" data-med="Prontogest 400mg Supp (برونتوجيست لبوس)">برونتوجيست</button>
-                                <button type="button" class="med-chip" data-med="Utrogestan 200mg (يوتروجستان)">يوتروجستان</button>
-                                <button type="button" class="med-chip" data-med="Osteocare Tablets (أوستيوكير كالسيوم)">أوستيوكير</button>
-                                <button type="button" class="med-chip" data-med="Feroglobin Capsules (فيروجلوبين حديد)">فيروجلوبين</button>
-                                <button type="button" class="med-chip" data-med="Panadol 500mg (بنادول)">بنادول</button>
-                                <button type="button" class="med-chip" data-med="Buscopan 10mg (بسكوبان)">بسكوبان</button>
-                                <button type="button" class="med-chip" data-med="Augmentin 1g (أوجمنتين)">أوجمنتين</button>
-                                <button type="button" class="med-chip" data-med="Flagyl 500mg (فلاجيل)">فلاجيل</button>
+                                <button type="button" class="med-chip" data-med="فوليك أسيد">فوليك أسيد</button>
+                                <button type="button" class="med-chip" data-med="دوفاستون">دوفاستون</button>
+                                <button type="button" class="med-chip" data-med="برونتوجيست">برونتوجيست</button>
+                                <button type="button" class="med-chip" data-med="يوتروجستان">يوتروجستان</button>
+                                <button type="button" class="med-chip" data-med="أوستيوكير">أوستيوكير</button>
+                                <button type="button" class="med-chip" data-med="فيروجلوبين">فيروجلوبين</button>
+                                <button type="button" class="med-chip" data-med="بنادول">بنادول</button>
+                                <button type="button" class="med-chip" data-med="بسكوبان">بسكوبان</button>
+                                <button type="button" class="med-chip" data-med="أوجمنتين">أوجمنتين</button>
+                                <button type="button" class="med-chip" data-med="فلاجيل">فلاجيل</button>
                             </div>
                         </div>
 
@@ -172,20 +199,24 @@
         </div>
     </main>
 
-    <!-- Hidden Print Template -->
+    <!-- Hidden Print Template for Prescription (Invoice Style) -->
     <div id="print-area" class="print-only">
         <div class="print-header">
             <div class="print-clinic-info">
-                <h1>كلينيك زون</h1>
-                <p>لأمراض النساء والتوليد وعلاج تأخر الإنجاب</p>
+                <h1>Clinic Zone</h1>
+                <p>Obstetrics & Gynecology</p>
                 <p>د. أحمد السيد</p>
             </div>
             <div class="print-logo">
-                <i class="fa-solid fa-heart-pulse"></i>
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
             </div>
         </div>
 
-        <div class="print-body">
+        <div class="print-body single-print-body">
             <div class="print-meta">
                 <p><strong>اسم المريضة:</strong> <span id="p-print-name"></span></p>
                 <p><strong>التاريخ:</strong> <span id="p-print-date"></span></p>
@@ -202,16 +233,102 @@
                     <div id="p-print-meds" style="white-space: pre-line;"></div>
                 </div>
             </div>
-        </div>
 
-        <div class="print-footer">
-            <div class="signature">توقيع الطبيب: ...........................</div>
-            <div class="address-line">
-                العنوان: شارع الجمهورية - برج الأطباء التخصصي - الدور الثالث | ت: 01012345678
+            <div class="print-footer">
+                <!-- Clinic Zone SVG Logo + Official Blue Circular Medical Stamp -->
+                <div class="print-signature-stamp">
+                    <!-- Handwritten Signature -->
+                    <div class="signature-block">
+                        <svg class="handwritten-signature" viewBox="0 0 300 100" width="280" height="90" style="touch-action: none;">
+                            <path d="M20,70 Q40,30 60,50 Q80,70 100,40 Q120,10 140,45 Q160,80 180,50 Q200,20 220,55 Q240,90 260,60 Q280,30 290,45" stroke="#1a1a2e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M30,65 Q45,45 60,60 Q75,75 90,55 Q105,35 120,55 Q135,75 150,50 Q165,25 180,50 Q195,75 210,55 Q225,35 240,60 Q255,85 270,55" stroke="#1a1a2e" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+                        </svg>
+                        <div class="signature-text">أحمد السيد مرتجي</div>
+                        <div class="signature-title">استشاري أمراض النساء والتوليد</div>
+                    </div>
+
+                    <!-- Official Blue Circular Medical Stamp -->
+                    <div class="medical-stamp">
+                        <svg viewBox="0 0 120 120" width="110" height="110">
+                            <!-- Outer ring -->
+                            <circle cx="60" cy="60" r="55" fill="none" stroke="#0d9488" stroke-width="4"/>
+                            <!-- Inner ring -->
+                            <circle cx="60" cy="60" r="45" fill="none" stroke="#0d9488" stroke-width="2"/>
+                            <!-- Center circle -->
+                            <circle cx="60" cy="60" r="20" fill="#0d9488"/>
+                            <!-- Arabic text around the circle - Clinic Zone -->
+                            <text x="60" y="25" text-anchor="middle" fill="#0d9488" font-size="10" font-weight="bold" font-family="Cairo, sans-serif">Clinic Zone</text>
+                            <text x="60" y="100" text-anchor="middle" fill="#0d9488" font-size="9" font-weight="bold" font-family="Cairo, sans-serif">كلينيك زون</text>
+                            <!-- Center text CZ -->
+                            <text x="60" y="65" text-anchor="middle" fill="white" font-size="22" font-weight="900" font-family="Cairo, sans-serif">CZ</text>
+                            <!-- Stars on sides -->
+                            <text x="60" y="38" text-anchor="middle" fill="#0d9488" font-size="12">★ ★</text>
+                            <text x="60" y="85" text-anchor="middle" fill="#0d9488" font-size="12">★ ★</text>
+                        </svg>
+                        <div class="stamp-label">ختم العيادة الرسمي</div>
+                    </div>
+                </div>
+
+                <div class="address-line">
+                    العنوان: شارع الجمهورية - برج الأطباء التخصصي - الدور الثالث | ت: 01012345678
+                </div>
+
+                <!-- QR Code for Clinic Zone Patient Page -->
+                <div class="qr-section">
+                    <img id="prescription-qr" src="" alt="QR Code - Clinic Zone" style="width: 80px; height: 80px;">
+                    <p class="qr-caption">اسحني للحجز في كلينيك زون</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Medical History Modal -->
+    <div id="medical-history-modal" class="modal-overlay hidden">
+        <div class="modal-card medical-history-card">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-file-medical"></i> السجل الطبي للمريضة</h2>
+                <button class="modal-close" onclick="closeMedicalHistoryModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="patient-info-bar">
+                    <span id="mh-patient-name"></span>
+                    <span id="mh-patient-phone"></span>
+                    <span id="mh-patient-count" class="prescription-count"></span>
+                </div>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="prescriptions">الوصفات الطبية</button>
+                    <button class="tab-btn" data-tab="bookings">الحجوزات</button>
+                </div>
+                <div class="tab-content">
+                    <div id="prescriptions-tab" class="tab-pane active">
+                        <div id="prescriptions-list" class="prescription-history-list">
+                            <!-- Prescriptions injected here -->
+                        </div>
+                    </div>
+                    <div id="bookings-tab" class="tab-pane">
+                        <div id="bookings-list" class="booking-history-list">
+                            <!-- Bookings injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer mh-footer-actions">
+                <button type="button" id="print-full-record-btn" class="btn btn-secondary btn-block">
+                    <i class="fa-solid fa-download"></i> طباعة / حفظ السجل الكامل PDF
+                </button>
+                <button type="button" id="new-prescription-btn" class="btn btn-primary btn-block">
+                    <i class="fa-solid fa-pen"></i> كتابة روشتة جديدة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EmailJS Browser SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- Firebase Realtime Database v10 Compat Scripts -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<!-- App Script -->
+<script src="app.js"></script>
 </body>
 </html>
