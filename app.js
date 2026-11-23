@@ -191,11 +191,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const liveQueueBanner = document.getElementById('live-queue-banner');
         const queueNumberEl = document.getElementById('queue-number');
 
-        // Set min date to today
+        // Set min date to today and run slot locking on load
         if (dateInput) {
             const today = new Date().toISOString().split('T')[0];
             dateInput.min = today;
             dateInput.value = today;
+
+            // Initial slot locking check for today
+            getActiveBookingsForDate(today).then(activeBookings => {
+                disableBookedSlots(activeBookings);
+            }).catch(err => console.error('Error on initial slot locking:', err));
         }
 
         // Initialize live queue
