@@ -1,4 +1,4 @@
-# Clinic Zone - Auto-Deploy Rules
+﻿# Clinic Zone - Auto-Deploy Rules
 
 ## Project Overview
 Clinic Zone medical clinic system with:
@@ -18,7 +18,6 @@ Automatically run this exact sequence:
 git add patient.html doctor.html style.css app.js
 git commit -m "Update Clinic Zone"
 git push origin main
-Start-Sleep -Seconds 20
 ```
 
 Then confirm completion in Arabic with live links:
@@ -43,3 +42,6 @@ git config user.email "ahmednaksh03@gmail.com"
 - Cross-tab sync: BroadcastChannel + storage events
 - Medical SVG emblem (cross + heartbeat) in headers & print template
 - RTL Arabic with English "Clinic Zone" branding
+
+## Mandatory Post-Task Workflow
+After completing any task, IMMEDIATELY run git add -A, git commit, git push, and execute powershell -ExecutionPolicy Bypass -File .\notify.ps1 with ZERO delay (do NOT wait or sleep).
