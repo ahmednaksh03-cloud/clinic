@@ -1,0 +1,21 @@
+﻿{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(git *)",
+      "Bash(powershell *)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -ExecutionPolicy Bypass -File \"C:/Users/ahmed/OneDrive/Desktop/clinic/notify.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}
