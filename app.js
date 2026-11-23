@@ -8,13 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // FIREBASE CONFIGURATION
     // ==========================================
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY_HERE",
-        authDomain: "clinic-zone-84536.firebaseapp.com",
-        databaseURL: "https://clinic-zone-84536-default-rtdb.firebaseio.com",
-        projectId: "clinic-zone-84536",
-        storageBucket: "clinic-zone-84536.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        databaseURL: "https://clinic-zone-84536-default-rtdb.firebaseio.com"
     };
 
     // Initialize Firebase (compat v10)
@@ -298,10 +292,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     const bc = new BroadcastChannel('clinic_zone_sync');
                     bc.postMessage('new-booking');
 
+                    // Save booking reference to localStorage
+                    localStorage.setItem('my_current_booking', JSON.stringify({
+                        id: bookingData.id,
+                        name: bookingData.name,
+                        phone: bookingData.phone
+                    }));
+
                     // Show Success
                     bookingForm.classList.add('hidden');
                     successBox.classList.remove('hidden');
                     navViewBtn.classList.remove('hidden');
+
+                    // Attach real-time listener for status updates
+                    const bookingRef = database.ref(BOOKINGS_PATH).child(bookingData.id);
+                    bookingRef.on('value', (snapshot) => {
+                        const booking = snapshot.val();
+                        if (booking) {
+                            const statusEl = document.getElementById('det-status');
+                            if (statusEl) {
+                                statusEl.textContent = booking.status;
+                                statusEl.className = 'status-badge ' +
+                                    (booking.status === 'مؤكد' ? 'status-confirmed' :
+                                     booking.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
+                            }
+                        }
+                    });
 
                     // Check existing booking for slot locking
                     checkExistingBooking();
@@ -629,11 +645,85 @@ document.addEventListener('DOMContentLoaded', () => {
         const prescMedsArea = document.getElementById('presc-meds');
         const medChips = document.querySelectorAll('.med-chip');
 
+        // Populate patient dropdown with unique names from window.allBookings
+        function populatePatientDropdown() {
+            if (!prescNameSelect) return;
+            const bookings = window.allBookings || [];
+
+            // Get unique patients by name+phone
+            const uniquePatients = [];
+            const seen = new Set();
+            bookings.forEach(b => {
+                const key = b.name + '|' + b.phone;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniquePatients.push({ name: b.name, phone: b.phone, id: b.id });
+                }
+            });
+
+            // Preserve currently selected value
+            const currentValue = prescNameSelect.value;
+
+            // Clear and repopulate
+            prescNameSelect.innerHTML = '<option value="" disabled selected>اختر مريضة من الجدول</option>';
+            uniquePatients.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.name;
+                opt.dataset.phone = p.phone;
+                opt.dataset.id = p.id;
+                opt.textContent = p.name;
+                prescNameSelect.appendChild(opt);
+            });
+
+            // Restore selection if still valid
+            if (currentValue && uniquePatients.some(p => p.name === currentValue)) {
+                prescNameSelect.value = currentValue;
+                if (prescPhoneInput) {
+                    prescPhoneInput.value = uniquePatients.find(p => p.name === currentValue).phone;
+                }
+            }
+        }
+
+        // Render Dashboard with direct real-time Firebase listener
+        window.renderDashboard = function() {
+            if (!document.body.classList.contains('doctor-page')) return;
+
+            database.ref(BOOKINGS_PATH).on('value', (snapshot) => {
+                const bookings = [];
+                if (snapshot.exists()) {
+                    snapshot.forEach((child) => {
+                        const data = child.val();
+                        bookings.push({ id: child.key, ...data });
+                    });
+                }
+
+                window.allBookings = bookings;
+
+                // Update Stat Cards
+                const statTotal = document.getElementById('stat-total');
+                if (statTotal) statTotal.innerText = bookings.length;
+
+                const statPending = document.getElementById('stat-pending');
+                if (statPending) statPending.innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
+
+                const statConfirmed = document.getElementById('stat-confirmed');
+                if (statConfirmed) statConfirmed.innerText = bookings.filter(b => b.status === 'مؤكد').length;
+
+                const statFollowup = document.getElementById('stat-followup');
+                if (statFollowup) statFollowup.innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
+
+                // Populate patient dropdown
+                populatePatientDropdown();
+
+                // Apply filters and render table
+                applyBookingFilters(window.allBookings);
+            });
+        };
+
         // Check Login State
         if (sessionStorage.getItem('doctor_logged_in') === 'true') {
             loginOverlay.classList.add('hidden');
             renderDashboard();
-            populatePatientDropdown();
         }
 
         if (loginForm) {
@@ -644,7 +734,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('doctor_logged_in', 'true');
                     loginOverlay.classList.add('hidden');
                     renderDashboard();
-                    populatePatientDropdown();
                 } else {
                     document.getElementById('login-error').classList.remove('hidden');
                 }
@@ -662,51 +751,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => {
                 location.reload(true);
-            });
-        }
-
-        // Populate patient dropdown with unique names from Firebase
-        function populatePatientDropdown() {
-            if (!prescNameSelect) return;
-
-            const bookingsRef = database.ref(BOOKINGS_PATH);
-            bookingsRef.orderByChild('timestamp').once('value', (snapshot) => {
-                const bookings = [];
-                snapshot.forEach((child) => {
-                    const data = child.val();
-                    bookings.push({ id: child.key, ...data });
-                });
-
-                // Get unique patients by name+phone
-                const uniquePatients = [];
-                const seen = new Set();
-                bookings.forEach(b => {
-                    const key = b.name + '|' + b.phone;
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        uniquePatients.push({ name: b.name, phone: b.phone, id: b.id });
-                    }
-                });
-
-                // Preserve currently selected value
-                const currentValue = prescNameSelect.value;
-
-                // Clear and repopulate
-                prescNameSelect.innerHTML = '<option value="" disabled selected>اختر مريضة من الجدول</option>';
-                uniquePatients.forEach(p => {
-                    const opt = document.createElement('option');
-                    opt.value = p.name;
-                    opt.dataset.phone = p.phone;
-                    opt.dataset.id = p.id;
-                    opt.textContent = p.name;
-                    prescNameSelect.appendChild(opt);
-                });
-
-                // Restore selection if still valid
-                if (currentValue && uniquePatients.some(p => p.name === currentValue)) {
-                    prescNameSelect.value = currentValue;
-                    prescPhoneInput.value = uniquePatients.find(p => p.name === currentValue).phone;
-                }
             });
         }
 
@@ -902,64 +946,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Real-time Firebase listener for bookings - replaces polling
-        let bookingsListenerAttached = false;
+        // Real-time Firebase listener for bookings (handled in renderDashboard)
         function attachBookingsListener() {
-            if (bookingsListenerAttached) return;
-            bookingsListenerAttached = true;
-
-            const bookingsRef = database.ref(BOOKINGS_PATH);
-            bookingsRef.orderByChild('timestamp').on('value', (snapshot) => {
-                if (!document.body.classList.contains('doctor-page')) return;
-                if (window.renderDashboard) {
-                    window.renderDashboard();
-                }
-            });
+            // Handled directly via renderDashboard's database.ref(BOOKINGS_PATH).on('value', ...)
         }
 
-        // Render Dashboard with Firebase data
+        // Render Dashboard with direct real-time Firebase listener
         window.renderDashboard = function() {
             if (!document.body.classList.contains('doctor-page')) return;
 
             const bookingsRef = database.ref(BOOKINGS_PATH);
-            bookingsRef.orderByChild('timestamp').once('value', (snapshot) => {
+            bookingsRef.on('value', (snapshot) => {
                 const bookings = [];
-                snapshot.forEach((child) => {
-                    const data = child.val();
-                    bookings.push({ id: child.key, ...data });
-                });
-
-                // Update Stats
-                document.getElementById('stat-total').innerText = bookings.length;
-                document.getElementById('stat-pending').innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
-                document.getElementById('stat-confirmed').innerText = bookings.filter(b => b.status === 'مؤكد').length;
-                document.getElementById('stat-followup').innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
-
-                const tbody = document.getElementById('bookings-table-body');
-                tbody.innerHTML = '';
-
-                // Define minimum height per row for consistency
-                const minRowHeight = 5; // At least 5 full rows
-
-                if (bookings.length === 0) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td colspan="6" style="text-align: center; padding: 2rem; color: var(--muted);">لا توجد حجوزات حالياً</td>`;
-                    tbody.appendChild(tr);
-                    // Ensure minimum height
-                    tbody.style.minHeight = `${minRowHeight * 50}px`;
-                    return;
+                if (snapshot.exists()) {
+                    snapshot.forEach((child) => {
+                        const data = child.val();
+                        bookings.push({ id: child.key, ...data });
+                    });
                 }
 
-                // Ensure table can display at least 5 rows
-                tbody.style.minHeight = 'auto';
-                const calculatedMinHeight = Math.max(bookings.length * 38 + 20, minRowHeight * 50);
-                tbody.style.minHeight = `${calculatedMinHeight}px`;
-
-                // Store all bookings for filtering
                 window.allBookings = bookings;
 
-                // Apply current filter
-                applyBookingFilters(bookings);
+                // Update Stats
+                const statTotal = document.getElementById('stat-total');
+                if (statTotal) statTotal.innerText = bookings.length;
+
+                const statPending = document.getElementById('stat-pending');
+                if (statPending) statPending.innerText = bookings.filter(b => b.status === 'قيد الانتظار').length;
+
+                const statConfirmed = document.getElementById('stat-confirmed');
+                if (statConfirmed) statConfirmed.innerText = bookings.filter(b => b.status === 'مؤكد').length;
+
+                const statFollowup = document.getElementById('stat-followup');
+                if (statFollowup) statFollowup.innerText = bookings.filter(b => b.visitType && b.visitType.includes('متابعة')).length;
+
+                // Populate patient dropdown
+                populatePatientDropdown();
+
+                // Apply filters and render table
+                applyBookingFilters(window.allBookings);
             });
         };
 
