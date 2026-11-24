@@ -1,9 +1,13 @@
-$BARK_KEY = "nn4CMRk52XsffJ5S8U4CWn"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 try { [console]::Beep(880, 200); [console]::Beep(1046, 200) } catch {}
 try {
-    $res = Invoke-RestMethod -Uri "https://api.day.app/$BARK_KEY/Clinic%20Zone/Task%20Completed?call=1&level=critical&sound=multiwayinvitation&volume=10" -TimeoutSec 20
-    Write-Host "Bark: $($res.message)"
+    $headers = @{
+        "Title"    = "Clinic Zone"
+        "Priority" = "urgent"
+        "Tags"     = "white_check_mark"
+    }
+    Invoke-RestMethod -Uri "https://ntfy.sh/clinic-zone-ahmed-2026" -Method Post -Headers $headers -Body "Task Completed - Pushed to GitHub" -TimeoutSec 15 | Out-Null
+    Write-Host "ntfy sent successfully!"
 } catch {
-    Write-Host "Bark error: $($_.Exception.Message)"
+    Write-Host "ntfy error: $($_.Exception.Message)"
 }
