@@ -111,59 +111,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // LIVE QUEUE MANAGEMENT
+    // SIDE DRAWER / HAMBURGER MENU
     // ==========================================
-    function initLiveQueue() {
-        // Read initial queue state from Firebase
-        database.ref(QUEUE_PATH).once('value', (snapshot) => {
-            const queue = snapshot.val() || 1;
-            updateQueueUI(queue);
-        });
+    function initSideDrawer() {
+        const menuToggleBtn = document.getElementById('menu-toggle-btn');
+        const drawerOverlay = document.getElementById('drawer-overlay');
+        const sideDrawer = document.getElementById('side-drawer');
+        const drawerCloseBtn = document.getElementById('drawer-close-btn');
 
-        // Listen for queue changes live
-        database.ref(QUEUE_PATH).on('value', (snapshot) => {
-            const queue = snapshot.val() || 1;
-            updateQueueUI(queue);
+        if (!menuToggleBtn || !drawerOverlay || !sideDrawer || !drawerCloseBtn) return;
+
+        function openDrawer() {
+            sideDrawer.classList.add('open');
+            drawerOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDrawer() {
+            sideDrawer.classList.remove('open');
+            drawerOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        menuToggleBtn.addEventListener('click', openDrawer);
+        drawerCloseBtn.addEventListener('click', closeDrawer);
+        drawerOverlay.addEventListener('click', closeDrawer);
+
+        // Close drawer on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sideDrawer.classList.contains('open')) {
+                closeDrawer();
+            }
         });
     }
-
-    function updateQueueUI(queueNumber) {
-        const queueEl = document.getElementById('current-queue-number');
-        if (queueEl) queueEl.textContent = queueNumber || 1;
-    }
-
-    // Queue control buttons with minimum of 1 constraint
-    window.decrementQueue = function() {
-        database.ref(QUEUE_PATH).transaction(current => {
-            return Math.max(1, (current || 1) - 1);
-        });
-    };
-
-    window.incrementQueue = function() {
-        database.ref(QUEUE_PATH).transaction(current => {
-            return (current || 1) + 1;
-        });
-    };
-
-    window.resetQueue = function() {
-        database.ref(QUEUE_PATH).set(1);
-    };
-
-    // Initialize queue control button listeners
-    document.addEventListener('DOMContentLoaded', () => {
-        // Decrement queue
-        if (document.getElementById('queue-decrement-btn')) {
-            document.getElementById('queue-decrement-btn').addEventListener('click', decrementQueue);
-        }
-        // Increment queue
-        if (document.getElementById('queue-increment-btn')) {
-            document.getElementById('queue-increment-btn').addEventListener('click', incrementQueue);
-        }
-        // Reset queue
-        if (document.getElementById('queue-reset-btn')) {
-            document.getElementById('queue-reset-btn').addEventListener('click', resetQueue);
-        }
-    });
 
     // ==========================================
     // PATIENT PAGE LOGIC
@@ -725,6 +705,9 @@ document.addEventListener('DOMContentLoaded', () => {
             loginOverlay.classList.add('hidden');
             renderDashboard();
         }
+
+        // Initialize Side Drawer
+        initSideDrawer();
 
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => {

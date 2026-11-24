@@ -52,22 +52,28 @@
             <div class="header-actions">
                 <button id="refresh-data-btn" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> تحديث</button>
                 <button id="doctor-logout-btn" class="btn btn-danger btn-sm"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+                <button id="menu-toggle-btn" class="btn btn-outline btn-sm" aria-label="فتح القائمة" title="القائمة"><i class="fa-solid fa-bars"></i></button>
             </div>
         </div>
     </header>
 
+    <!-- Side Drawer Overlay -->
+    <div id="drawer-overlay" class="drawer-overlay hidden"></div>
+
+    <!-- Side Drawer -->
+    <aside id="side-drawer" class="side-drawer">
+        <div class="drawer-header">
+            <h3>القائمة</h3>
+            <button id="drawer-close-btn" class="drawer-close-btn" aria-label="إغلاق القائمة"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <nav class="drawer-nav">
+            <!-- Drawer items will be added here in the future -->
+        </nav>
+    </aside>
+
     <main class="dashboard-content container">
 
-        <!-- Live Queue Control Bar -->
-        <div id="live-queue-bar" class="live-queue-bar" style="background: #f0fdf4; border: 1px solid #10b981; border-radius: 15px; padding: 20px; margin-bottom: 30px; text-align: center; direction: ltr; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1);">
-            <div style="font-weight: 800; color: #059669; font-size: 1.1rem;">القائمة الحالية: <span id="current-queue-number">1</span> - جاري الفحص</div>
-            <div style="margin-top: 10px; direction: rtl;">
-                <button id="queue-decrement-btn" class="btn btn-outline btn-sm" style="margin-right: 10px;">-</button>
-                <button id="queue-increment-btn" class="btn btn-primary btn-sm">+</button>
-                <button id="queue-reset-btn" class="btn btn-danger btn-sm" style="margin-left: 10px;">إعادة تعيين</button>
-            </div>
-        </div>
-
+        
         <!-- Stats Row -->
         <div class="stats-grid">
             <div class="stat-card">
