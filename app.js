@@ -1030,13 +1030,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusClass = b.status === 'مؤكد' ? 'status-confirmed' :
                                     (b.status === 'ملغي' || b.status === 'cancelled' ? 'status-cancelled' : 'status-pending');
 
-                // Format phone with WhatsApp prefix
-                let displayPhone = b.phone;
+                // Format phone with WhatsApp prefix (guard against null/undefined)
+                let displayPhone = String(b?.phone || '');
                 if (displayPhone.startsWith('01')) displayPhone = '20' + displayPhone.slice(2);
 
-                // Format date display
-                const dateParts = b.date.split('-');
-                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                // Format date display (guard against null/undefined)
+                const dateParts = String(b?.date || '').split('-');
+                const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : (b?.date || '');
 
                 const tr = document.createElement('tr');
 
@@ -1193,11 +1193,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // EDIT PATIENT PAGE MODAL
     // ==========================================
     function initEditPatientPageModal() {
-        const modal = document.getElementById('edit-patient-modal');
-        const openBtn = document.querySelector('.drawer-nav a[onclick*="edit-patient-modal"]');
-
-        // Find the drawer menu item that opens this modal
-        const editMenuItem = document.querySelector('.drawer-nav li:first-child a');
+        const modal = document.getElementById('edit-patient-page-modal');
+        const editMenuItem = document.getElementById('drawer-edit-patient-page');
         if (editMenuItem) {
             editMenuItem.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1624,7 +1621,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     function initManageDashboardModal() {
         const modal = document.getElementById('manage-dashboard-modal');
-        const manageMenuItem = document.querySelector('.drawer-nav li:nth-child(2) a');
+        const manageMenuItem = document.getElementById('drawer-manage-dashboard');
         if (manageMenuItem) {
             manageMenuItem.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1900,7 +1897,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     function initAccountSettingsModal() {
         const modal = document.getElementById('account-settings-modal');
-        const accountMenuItem = document.querySelector('.drawer-nav li:nth-child(3) a');
+        const accountMenuItem = document.getElementById('drawer-account-settings');
         if (accountMenuItem) {
             accountMenuItem.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -2191,7 +2188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     function initContactClinicZoneModal() {
         const modal = document.getElementById('contact-clinic-zone-modal');
-        const contactMenuItem = document.querySelector('.drawer-nav li:nth-child(4) a');
+        const contactMenuItem = document.getElementById('drawer-contact-clinic-zone');
         if (contactMenuItem) {
             contactMenuItem.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -2306,7 +2303,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     function initClinicCodeModal() {
         const modal = document.getElementById('clinic-code-modal');
-        const codeMenuItem = document.querySelector('.drawer-nav li:nth-child(5) a');
+        const codeMenuItem = document.getElementById('drawer-clinic-code');
         if (codeMenuItem) {
             codeMenuItem.addEventListener('click', (e) => {
                 e.preventDefault();
