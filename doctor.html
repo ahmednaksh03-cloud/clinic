@@ -378,6 +378,15 @@
                 <!-- Draft Mode -->
                 <div id="draft-tab" class="edit-tab-pane active">
                     <div class="edit-section">
+                        <h3><i class="fa-solid fa-heading"></i> عنوان الصفحة (Hero Title)</h3>
+                        <div class="form-group">
+                            <label>العنوان الرئيسي في قسم البطل (Hero)</label>
+                            <input type="text" id="edit-hero-title" placeholder="مثال: نعتني بصحتك وبداية حياة جديدة لمولودك بكل حب وأمان" style="width: 100%;">
+                            <small class="form-hint">هذا العنوان يظهر في قسم البطل في صفحة المريض. سيتم عرضه في تبويب المعاينة.</small>
+                        </div>
+                    </div>
+
+                    <div class="edit-section">
                         <h3><i class="fa-solid fa-user-doctor"></i> صورة الطبيب والسيرة الذاتية</h3>
                         <div class="form-row">
                             <div class="form-group">
@@ -387,6 +396,7 @@
                                     <input type="file" id="edit-doc-img-input" accept="image/*" style="display: none;">
                                     <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('edit-doc-img-input').click()"><i class="fa-solid fa-upload"></i> تغيير الصورة</button>
                                 </div>
+                                <small class="form-hint">الصورة ستحفظ كـ Base64 في Firebase. الحد الأقصى: 500KB. التنسيقات المدعومة: JPG, PNG, WebP.</small>
                             </div>
                             <div class="form-group">
                                 <label>السيرة الذاتية / المؤهلات</label>
@@ -525,36 +535,37 @@
                     </div>
                 </div>
 
-                <!-- Theme Colors -->
+                <!-- Theme Colors - Light/Dark Mode -->
                 <div id="manage-theme-tab" class="manage-tab-pane">
-                    <h3>تخصيص ألوان لوحة الطبيب</h3>
-                    <div class="theme-options">
-                        <div class="theme-option" data-theme="default">
-                            <div class="theme-preview default"></div>
-                            <span>الافتراضي (Teal)</span>
-                        </div>
-                        <div class="theme-option" data-theme="blue">
-                            <div class="theme-preview blue"></div>
-                            <span>أزرق</span>
-                        </div>
-                        <div class="theme-option" data-theme="green">
-                            <div class="theme-preview green"></div>
-                            <span>أخضر</span>
-                        </div>
-                        <div class="theme-option" data-theme="purple">
-                            <div class="theme-preview purple"></div>
-                            <span>بنفسجي</span>
-                        </div>
-                        <div class="theme-option" data-theme="orange">
-                            <div class="theme-preview orange"></div>
-                            <span>برتقالي</span>
-                        </div>
-                        <div class="theme-option" data-theme="red">
-                            <div class="theme-preview red"></div>
-                            <span>أحمر</span>
+                    <h3>مظهر لوحة الطبيب</h3>
+                    <div class="theme-toggle-container" style="padding: 20px;">
+                        <div class="theme-toggle-card" style="background: var(--bg-card); border: 2px solid var(--border-color); border-radius: var(--radius); padding: 30px; text-align: center;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                                <div class="theme-mode-preview" style="flex: 1; min-width: 150px;">
+                                    <i class="fa-regular fa-sun" style="font-size: 3rem; color: #f59e0b;"></i>
+                                    <h4 style="margin-top: 10px;">الوضع الفاتح</h4>
+                                    <p style="color: var(--text-muted); font-size: 0.9rem;">الخلفية فاتحة، النصوص داكنة</p>
+                                </div>
+                                <div class="toggle-switch-wrapper">
+                                    <label class="theme-toggle-label" style="display: flex; align-items: center; gap: 15px; cursor: pointer; user-select: none;">
+                                        <span id="theme-mode-indicator" style="font-weight: 700; font-size: 1.1rem; color: var(--text-main);">فاتح</span>
+                                        <div class="theme-toggle-switch" id="theme-toggle-switch" style="width: 70px; height: 36px; background: var(--border-color); border-radius: 18px; position: relative; transition: var(--transition); cursor: pointer;">
+                                            <div class="theme-toggle-thumb" id="theme-toggle-thumb" style="width: 28px; height: 28px; background: white; border-radius: 50%; position: absolute; top: 4px; left: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: var(--transition); display: flex; align-items: center; justify-content: center;">
+                                                <i class="fa-regular fa-sun" style="font-size: 0.8rem; color: #f59e0b;"></i>
+                                            </div>
+                                        </div>
+                                        <span id="theme-mode-indicator-dark" style="font-weight: 700; font-size: 1.1rem; color: var(--text-main); display: none;">داكن</span>
+                                    </label>
+                                </div>
+                                <div class="theme-mode-preview" style="flex: 1; min-width: 150px;">
+                                    <i class="fa-regular fa-moon" style="font-size: 3rem; color: #6366f1;"></i>
+                                    <h4 style="margin-top: 10px;">الوضع الداكن</h4>
+                                    <p style="color: var(--text-muted); font-size: 0.9rem;">الخلفية داكنة، النصوص فاتحة</p>
+                                </div>
+                            </div>
+                            <p class="theme-note" style="margin-top: 20px; color: var(--text-muted);">سيتم حفظ اختيارك وتطبيقه فوراً على لوحة التحكم، ومزامنته عبر الأجهزة.</p>
                         </div>
                     </div>
-                    <p class="theme-note">سيتم حفظ اختيارك وتطبيقه فوراً على لوحة التحكم.</p>
                 </div>
             </div>
         </div>
@@ -737,10 +748,7 @@
                     <li>لا تشارك هذا الكود علناً إلا عند الضرورة</li>
                 </ul>
             </div>
-            <div class="code-actions">
-                <button type="button" class="btn btn-outline" id="regenerate-clinic-code-btn"><i class="fa-solid fa-rotate"></i> توليد كود جديد</button>
-            </div>
-        </div>
+                    </div>
     </div>
 </div>
 

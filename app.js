@@ -1233,8 +1233,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tabId = btn.dataset.editTab + '-tab';
                 const targetPane = document.getElementById(tabId);
                 if (targetPane) targetPane.classList.add('active');
+
+                // If switching to preview tab, render preview
+                if (tabId === 'preview-tab') {
+                    renderPatientPagePreview();
+                }
             });
         });
+
+        // Photo upload handler
+        const photoInput = document.getElementById('edit-doc-img-input');
+        const photoPreview = document.getElementById('edit-doc-img');
+        if (photoInput && photoPreview) {
+            photoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Validate file size (max 500KB)
+                if (file.size > 500 * 1024) {
+                    alert('حجم الصورة يجب أن يكون أقل من 500KB');
+                    photoInput.value = '';
+                    return;
+                }
+
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert('تنسيق الصورة غير مدعوم. استخدم JPG, PNG, أو WebP');
+                    photoInput.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64 = event.target.result;
+                    photoPreview.src = base64;
+                    photoPreview.dataset.base64 = base64;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
 
         // Add working hours entry
         const addHoursBtn = document.getElementById('add-working-hours-btn');
@@ -1360,12 +1398,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function collectPatientPageData() {
+            const heroTitle = document.getElementById('edit-hero-title')?.value || 'نعتني بصحتك وبداية حياة جديدة لمولودك بكل حب وأمان';
+            const imgEl = document.getElementById('edit-doc-img');
+            const imageSrc = imgEl?.dataset?.base64 || imgEl?.src || 'doctor.jpeg';
+
             const data = {
+                heroTitle: heroTitle,
                 doctor: {
                     name: document.getElementById('edit-doc-bio')?.value || '',
                     title: '',
                     credentials: [],
-                    image: document.getElementById('edit-doc-img')?.src || 'doctor.jpeg'
+                    image: imageSrc
                 },
                 workingHours: [],
                 addresses: [],
@@ -1436,13 +1479,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function populateEditForm(data) {
+            // Set hero title
+            const heroTitleEl = document.getElementById('edit-hero-title');
+            if (heroTitleEl && data.heroTitle) {
+                heroTitleEl.value = data.heroTitle;
+            }
+
             if (data.doctor) {
                 const bioText = (data.doctor.credentials || []).join('\n');
                 const bioEl = document.getElementById('edit-doc-bio');
                 if (bioEl) bioEl.value = bioText;
 
                 const imgEl = document.getElementById('edit-doc-img');
-                if (imgEl && data.doctor.image) imgEl.src = data.doctor.image;
+                if (imgEl && data.doctor.image) {
+                    imgEl.src = data.doctor.image;
+                    // Store base64 if it's a data URL
+                    if (data.doctor.image.startsWith('data:')) {
+                        imgEl.dataset.base64 = data.doctor.image;
+                    }
+                }
             }
 
             if (data.workingHours?.length) {
@@ -1586,7 +1641,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="container hero-container">
                         <div class="hero-content">
                             <span class="badge"><i class="fa-solid fa-award"></i> رعاية طبية متكاملة بأحدث المعايير</span>
-                            <h2>${doctor.name ? `نعتني بصحتك مع ${doctor.name}` : 'نعتني بصحتك وبداية حياة جديدة لمولودك بكل حب وأمان'}</h2>
+                            <h2>${data.heroTitle || (doctor.name ? `نعتني بصحتك مع ${doctor.name}` : 'نعتني بصحتك وبداية حياة جديدة لمولودك بكل حب وأمان')}</h2>
                             <p>في كلينيك زون، نوفر لكِ بيئة طبية هادئة ومريحة مجهزة بأحدث أجهزة السونار والتقنيات الطبية المتقدمة تحت إشراف نخبة من الاستشاريين المتخصصين.</p>
                             <div class="hero-buttons">
                                 <a href="#booking-section" class="btn btn-primary"><i class="fa-solid fa-calendar-check"></i> احجزي موعدك الآن</a>
@@ -1872,46 +1927,67 @@ document.addEventListener('DOMContentLoaded', () => {
             return dayEl;
         }
 
-        // Theme Colors
-        const themeOptions = document.querySelectorAll('.theme-option');
-        themeOptions.forEach(option => {
-            option.addEventListener('click', () => {
-                const theme = option.dataset.theme;
-                applyDashboardTheme(theme);
-                themeOptions.forEach(o => o.classList.remove('active'));
-                option.classList.add('active');
-                saveDashboardTheme(theme);
-            });
-        });
+        // Light/Dark Theme Toggle
+        const themeToggleSwitch = document.getElementById('theme-toggle-switch');
+        const themeToggleThumb = document.getElementById('theme-toggle-thumb');
 
-        function applyDashboardTheme(theme) {
+        // Load saved theme preference
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('dashboard_theme_mode') || 'light';
+            applyThemeMode(savedTheme);
+        }
+
+        function applyThemeMode(mode) {
             const root = document.documentElement;
-            const themes = {
-                default: { primary: '#0d9488', 'primary-light': '#ccfbf1', 'primary-dark': '#0f766e' },
-                blue: { primary: '#3b82f6', 'primary-light': '#dbeafe', 'primary-dark': '#2563eb' },
-                green: { primary: '#10b981', 'primary-light': '#d1fae5', 'primary-dark': '#059669' },
-                purple: { primary: '#8b5cf6', 'primary-light': '#ede9fe', 'primary-dark': '#7c3aed' },
-                orange: { primary: '#f97316', 'primary-light': '#ffedd5', 'primary-dark': '#ea580c' },
-                red: { primary: '#ef4444', 'primary-light': '#fee2e2', 'primary-dark': '#dc2626' }
-            };
+            if (mode === 'dark') {
+                root.setAttribute('data-theme', 'dark');
+                if (themeToggleThumb) {
+                    themeToggleThumb.style.transform = 'translateX(34px)';
+                    themeToggleThumb.innerHTML = '<i class="fa-regular fa-moon" style="font-size: 0.8rem; color: #6366f1;"></i>';
+                }
+                document.getElementById('theme-mode-indicator').style.display = 'none';
+                document.getElementById('theme-mode-indicator-dark').style.display = 'inline';
+            } else {
+                root.removeAttribute('data-theme');
+                if (themeToggleThumb) {
+                    themeToggleThumb.style.transform = 'translateX(0)';
+                    themeToggleThumb.innerHTML = '<i class="fa-regular fa-sun" style="font-size: 0.8rem; color: #f59e0b;"></i>';
+                }
+                document.getElementById('theme-mode-indicator').style.display = 'inline';
+                document.getElementById('theme-mode-indicator-dark').style.display = 'none';
+            }
+            localStorage.setItem('dashboard_theme_mode', mode);
 
-            const colors = themes[theme] || themes.default;
-            Object.entries(colors).forEach(([key, value]) => {
-                root.style.setProperty(`--${key}`, value);
+            // Save to Firebase for cross-device sync
+            database.ref('clinic_settings/theme_mode').set(mode).catch(console.error);
+
+            // Broadcast to other tabs
+            if (window.broadcastChannel) {
+                window.broadcastChannel.postMessage({ type: 'theme_change', mode });
+            }
+        }
+
+        if (themeToggleSwitch) {
+            themeToggleSwitch.addEventListener('click', () => {
+                const currentMode = localStorage.getItem('dashboard_theme_mode') || 'light';
+                const newMode = currentMode === 'light' ? 'dark' : 'light';
+                applyThemeMode(newMode);
             });
         }
 
-        function saveDashboardTheme(theme) {
-            localStorage.setItem('dashboard_theme', theme);
-            // Also save to Firebase for cross-device sync
-            database.ref('clinic_settings/theme').set(theme).catch(console.error);
+        // Listen for theme changes from other tabs
+        if (!window.themeBroadcastListener) {
+            window.themeBroadcastListener = true;
+            if (window.broadcastChannel) {
+                window.broadcastChannel.addEventListener('message', (event) => {
+                    if (event.data.type === 'theme_change') {
+                        applyThemeMode(event.data.mode);
+                    }
+                });
+            }
         }
 
-        function loadDashboardTheme() {
-            const saved = localStorage.getItem('dashboard_theme') || 'default';
-            applyDashboardTheme(saved);
-            themeOptions.forEach(o => o.classList.toggle('active', o.dataset.theme === saved));
-        }
+        loadThemePreference();
     }
 
     // ==========================================
@@ -2350,12 +2426,6 @@ document.addEventListener('DOMContentLoaded', () => {
             copyBtn.addEventListener('click', copyClinicCode);
         }
 
-        // Regenerate code
-        const regenerateBtn = document.getElementById('regenerate-clinic-code-btn');
-        if (regenerateBtn) {
-            regenerateBtn.addEventListener('click', regenerateClinicCode);
-        }
-
         function loadClinicCode() {
             // Try localStorage first
             let code = localStorage.getItem('clinic_code');
@@ -2389,14 +2459,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('clinic_code', code);
             database.ref('clinic_settings/clinic_code').set(code).catch(console.error);
             return code;
-        }
-
-        function regenerateClinicCode() {
-            if (!confirm('سيتم إنشاء كود جديد وسيبطل الكود الحالي. هل تريد المتابعة؟')) return;
-
-            const code = generateClinicCode();
-            displayClinicCode(code);
-            alert('تم إنشاء كود عيادة جديد: ' + code);
         }
 
         function copyClinicCode() {
