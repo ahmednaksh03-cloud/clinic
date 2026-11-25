@@ -1924,8 +1924,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const themeToggleSwitch = document.getElementById('theme-toggle-switch');
         const themeToggleThumb = document.getElementById('theme-toggle-thumb');
 
-        // Load saved theme preference
-        function loadThemePreference() {
+        // Load saved theme preference and apply
+        function loadDashboardTheme() {
             const savedTheme = localStorage.getItem('dashboard_theme_mode') || 'light';
             applyThemeMode(savedTheme);
         }
@@ -1980,7 +1980,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        loadThemePreference();
+        // Initialize theme on page load
+        loadDashboardTheme();
     }
 
     // ==========================================
