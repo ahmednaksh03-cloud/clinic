@@ -110,6 +110,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Safe fallback for live queue (defined globally so initPatientPage never throws ReferenceError)
+    if (typeof window.initLiveQueue !== 'function') {
+        window.initLiveQueue = function () {
+            const queueEl = document.getElementById('queue-number');
+            const banner = document.getElementById('live-queue-banner');
+            if (!queueEl || !banner) return;
+
+            // Read current queue from Firebase
+            database.ref(QUEUE_PATH).on('value', (snapshot) => {
+                const val = snapshot.val();
+                queueEl.textContent = val || 1;
+            });
+        };
+    }
+
     // ==========================================
     // SIDE DRAWER / HAMBURGER MENU
     // ==========================================
