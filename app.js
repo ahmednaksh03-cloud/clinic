@@ -1591,14 +1591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Render preview when preview tab is clicked
-        modal?.querySelectorAll('.edit-tab-btn').forEach(btn => {
-            if (btn.dataset.editTab === 'preview') {
-                btn.addEventListener('click', () => {
-                    const draftData = collectPatientPageData();
-                    renderPatientPagePreview(draftData);
-                });
-            }
-        });
+        // REMOVED: Tab event listener logic to prevent duplication as it is handled by the tab switching logic in initEditPatientPageModal
 
         function renderPatientPagePreview(data) {
             const previewContainer = document.getElementById('patient-page-preview');
