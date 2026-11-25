@@ -272,6 +272,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const bc = new BroadcastChannel('clinic_zone_sync');
                     bc.postMessage('new-booking');
 
+                    // Also send structured message with full booking data
+                    const structuredBc = new BroadcastChannel('clinic_zone_sync');
+                    structuredBc.postMessage({
+                        type: 'new-booking-full',
+                        booking: bookingData
+                    });
+
                     // Save booking reference to localStorage
                     localStorage.setItem('my_current_booking', JSON.stringify({
                         id: bookingData.id,
@@ -913,9 +920,25 @@ document.addEventListener('DOMContentLoaded', () => {
         // Listen for booking status changes from patient page
         const bc = new BroadcastChannel('clinic_zone_sync');
         bc.onmessage = (event) => {
+            // Handle both string messages and structured object messages
             if (event.data === 'new-booking' || event.data === 'refresh') {
                 if (window.renderDashboard) {
                     window.renderDashboard();
+                }
+            } else if (event.data && event.data.type === 'new-booking-full') {
+                // Handle structured booking data message
+                if (event.data && event.data.booking && window.renderDashboard) {
+                    // Pre-load the booking data into localStorage for quick access
+                    const booking = event.data.booking;
+                    localStorage.setItem('my_current_booking', JSON.stringify({
+                        id: booking.id,
+                        name: booking.name,
+                        phone: booking.phone
+                    }));
+                    // Re-render the dashboard to show the new booking
+                    if (window.renderDashboard) {
+                        window.renderDashboard();
+                    }
                 }
             }
         };
