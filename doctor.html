@@ -67,7 +67,38 @@
             <button id="drawer-close-btn" class="drawer-close-btn" aria-label="إغلاق القائمة"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <nav class="drawer-nav">
-            <!-- Drawer items will be added here in the future -->
+            <ul>
+                <li>
+                    <button id="drawer-edit-patient-page" class="drawer-item">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>تعديل صفحة المريض</span>
+                    </button>
+                </li>
+                <li>
+                    <button id="drawer-manage-dashboard" class="drawer-item">
+                        <i class="fa-solid fa-gears"></i>
+                        <span>إدارة لوحة الطبيب</span>
+                    </button>
+                </li>
+                <li>
+                    <button id="drawer-account-settings" class="drawer-item">
+                        <i class="fa-solid fa-user-cog"></i>
+                        <span>إعدادات الحساب والرسائل</span>
+                    </button>
+                </li>
+                <li>
+                    <button id="drawer-contact-clinic-zone" class="drawer-item">
+                        <i class="fa-solid fa-headset"></i>
+                        <span>تواصل معنا كلينيك زون</span>
+                    </button>
+                </li>
+                <li>
+                    <button id="drawer-clinic-code" class="drawer-item">
+                        <i class="fa-solid fa-key"></i>
+                        <span>معرفة كود العيادة</span>
+                    </button>
+                </li>
+            </ul>
         </nav>
     </aside>
 
@@ -329,7 +360,391 @@
         </div>
     </div>
 
-    <!-- EmailJS Browser SDK -->
+    <!-- Modal: Edit Patient Page (Draft/Preview mode) -->
+<div id="edit-patient-page-modal" class="modal-overlay hidden">
+    <div class="modal-card edit-patient-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-pen-to-square"></i> تعديل صفحة المريض</h2>
+            <button class="modal-close" onclick="closeEditPatientPageModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <!-- Draft/Preview Tabs -->
+            <div class="edit-mode-tabs">
+                <button class="edit-tab-btn active" data-edit-tab="draft">مسودة (تعديل)</button>
+                <button class="edit-tab-btn" data-edit-tab="preview">معاينة مباشرة</button>
+            </div>
+
+            <div class="edit-tab-content">
+                <!-- Draft Mode -->
+                <div id="draft-tab" class="edit-tab-pane active">
+                    <div class="edit-section">
+                        <h3><i class="fa-solid fa-user-doctor"></i> صورة الطبيب والسيرة الذاتية</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>صورة الطبيب</label>
+                                <div class="image-upload-area">
+                                    <img id="edit-doc-img" src="doctor.jpeg" alt="صورة الطبيب" style="max-width: 200px; border-radius: 12px; border: 2px solid var(--border-color);">
+                                    <input type="file" id="edit-doc-img-input" accept="image/*" style="display: none;">
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('edit-doc-img-input').click()"><i class="fa-solid fa-upload"></i> تغيير الصورة</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>السيرة الذاتية / المؤهلات</label>
+                                <textarea id="edit-doc-bio" rows="6" placeholder="اكتب السيرة الذاتية والمؤهلات هنا..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="edit-section">
+                        <h3><i class="fa-solid fa-clock"></i> مواعيد العمل في العيادة</h3>
+                        <div id="working-hours-editor">
+                            <!-- Working hours entries will be added here -->
+                        </div>
+                        <button type="button" class="btn btn-outline" id="add-working-hours-btn"><i class="fa-solid fa-plus"></i> إضافة وقت إضافي</button>
+                    </div>
+
+                    <div class="edit-section">
+                        <h3><i class="fa-solid fa-location-dot"></i> العناوين / الفروع</h3>
+                        <div id="addresses-editor">
+                            <!-- Address entries will be added here -->
+                        </div>
+                        <button type="button" class="btn btn-outline" id="add-address-btn"><i class="fa-solid fa-plus"></i> إضافة فرع</button>
+                    </div>
+
+                    <div class="edit-section">
+                        <h3><i class="fa-solid fa-stethoscope"></i> الخدمات الطبية</h3>
+                        <div id="services-editor">
+                            <!-- Service entries will be added here -->
+                        </div>
+                        <button type="button" class="btn btn-outline" id="add-service-btn"><i class="fa-solid fa-plus"></i> إضافة خدمة</button>
+                    </div>
+
+                    <div class="edit-section">
+                        <h3><i class="fa-solid fa-info"></i> معلومات التذييل (Footer)</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>معلومات التواصل</label>
+                                <textarea id="edit-footer-contact" rows="3" placeholder="الهاتف، الإيميل، العنوان..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>مواعيد العمل في التذييل</label>
+                                <textarea id="edit-footer-hours" rows="3" placeholder="مثال: السبت - الخميس: 4:00 م - 10:00 م"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>العناوين في التذييل</label>
+                                <textarea id="edit-footer-addresses" rows="3" placeholder="العناوين والفروع..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="edit-actions">
+                        <button type="button" class="btn btn-secondary" onclick="resetEditPatientPageDraft()">إلغاء التغييرات</button>
+                        <button type="button" class="btn btn-primary" id="save-publish-patient-page-btn"><i class="fa-solid fa-save"></i> حفظ ونشر التعديلات</button>
+                    </div>
+                </div>
+
+                <!-- Preview Mode -->
+                <div id="preview-tab" class="edit-tab-pane">
+                    <div id="patient-page-preview" class="patient-page-preview">
+                        <!-- Live preview of patient page will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Manage Dashboard (Booking management, Calendar view, Theme colors) -->
+<div id="manage-dashboard-modal" class="modal-overlay hidden">
+    <div class="modal-card manage-dashboard-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-gears"></i> إدارة لوحة الطبيب</h2>
+            <button class="modal-close" onclick="closeManageDashboardModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="manage-tabs">
+                <button class="manage-tab-btn active" data-manage-tab="bookings">إدارة الحجوزات</button>
+                <button class="manage-tab-btn" data-manage-tab="calendar">الجدول (تقويم)</button>
+                <button class="manage-tab-btn" data-manage-tab="theme">ألوان اللوحة</button>
+            </div>
+
+            <div class="manage-tab-content">
+                <!-- Bookings Management -->
+                <div id="manage-bookings-tab" class="manage-tab-pane active">
+                    <div class="bookings-mgmt-toolbar">
+                        <input type="text" id="mgmt-search" placeholder="بحث باسم المريضة أو الهاتف...">
+                        <select id="mgmt-filter-status">
+                            <option value="all">جميع الحالات</option>
+                            <option value="قيد الانتظار">قيد الانتظار</option>
+                            <option value="مؤكد">مؤكد</option>
+                            <option value="ملغي">ملغي</option>
+                        </select>
+                        <select id="mgmt-filter-date">
+                            <option value="all">جميع التواريخ</option>
+                            <option value="today">اليوم</option>
+                            <option value="upcoming">القادمة</option>
+                        </select>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="clinic-table">
+                            <thead>
+                                <tr>
+                                    <th>المريضة</th>
+                                    <th>التاريخ والوقت</th>
+                                    <th>نوع الزيارة</th>
+                                    <th>الهاتف</th>
+                                    <th>الحالة</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mgmt-bookings-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div id="manage-calendar-tab" class="manage-tab-pane">
+                    <div class="calendar-controls">
+                        <div class="calendar-nav">
+                            <button class="btn btn-outline btn-sm" id="cal-prev-year"><i class="fa-solid fa-chevron-right"></i> سنة سابقة</button>
+                            <button class="btn btn-outline btn-sm" id="cal-prev-month"><i class="fa-solid fa-chevron-right"></i> شهر سابق</button>
+                            <span id="cal-current-month-year" class="cal-title"></span>
+                            <button class="btn btn-outline btn-sm" id="cal-next-month"><i class="fa-solid fa-chevron-left"></i> شهر قادم</button>
+                            <button class="btn btn-outline btn-sm" id="cal-next-year"><i class="fa-solid fa-chevron-left"></i> سنة قادمة</button>
+                        </div>
+                        <div class="calendar-legend">
+                            <span class="legend-item"><span class="legend-color" style="background: #f0fdf4;"></span> مؤكد</span>
+                            <span class="legend-item"><span class="legend-color" style="background: #fffbeb;"></span> قيد الانتظار</span>
+                            <span class="legend-item"><span class="legend-color" style="background: #fff1f2;"></span> ملغي</span>
+                            <span class="legend-item warning"><span class="legend-color" style="background: #fef3c7;"></span> كثافة عالية (>5)</span>
+                            <span class="legend-item danger"><span class="legend-color" style="background: #fee2e2;"></span> تعارض (>10)</span>
+                        </div>
+                    </div>
+                    <div id="calendar-grid" class="calendar-grid">
+                        <!-- Calendar months will be rendered here -->
+                    </div>
+                </div>
+
+                <!-- Theme Colors -->
+                <div id="manage-theme-tab" class="manage-tab-pane">
+                    <h3>تخصيص ألوان لوحة الطبيب</h3>
+                    <div class="theme-options">
+                        <div class="theme-option" data-theme="default">
+                            <div class="theme-preview default"></div>
+                            <span>الافتراضي (Teal)</span>
+                        </div>
+                        <div class="theme-option" data-theme="blue">
+                            <div class="theme-preview blue"></div>
+                            <span>أزرق</span>
+                        </div>
+                        <div class="theme-option" data-theme="green">
+                            <div class="theme-preview green"></div>
+                            <span>أخضر</span>
+                        </div>
+                        <div class="theme-option" data-theme="purple">
+                            <div class="theme-preview purple"></div>
+                            <span>بنفسجي</span>
+                        </div>
+                        <div class="theme-option" data-theme="orange">
+                            <div class="theme-preview orange"></div>
+                            <span>برتقالي</span>
+                        </div>
+                        <div class="theme-option" data-theme="red">
+                            <div class="theme-preview red"></div>
+                            <span>أحمر</span>
+                        </div>
+                    </div>
+                    <p class="theme-note">سيتم حفظ اختيارك وتطبيقه فوراً على لوحة التحكم.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Account & Message Settings -->
+<div id="account-settings-modal" class="modal-overlay hidden">
+    <div class="modal-card account-settings-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-user-cog"></i> إعدادات الحساب والرسائل</h2>
+            <button class="modal-close" onclick="closeAccountSettingsModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-tabs">
+                <button class="settings-tab-btn active" data-settings-tab="password">كلمة المرور</button>
+                <button class="settings-tab-btn" data-settings-tab="emails">الإيميلات</button>
+            </div>
+
+            <div class="settings-tab-content">
+                <!-- Password Settings -->
+                <div id="settings-password-tab" class="settings-tab-pane active">
+                    <div class="settings-section">
+                        <h3><i class="fa-solid fa-lock"></i> تغيير كلمة مرور لوحة التحكم</h3>
+                        <form id="change-password-form">
+                            <div class="form-group">
+                                <label>كلمة المرور الحالية</label>
+                                <input type="password" id="current-password" required placeholder="أدخل كلمة المرور الحالية">
+                            </div>
+                            <div class="form-group">
+                                <label>كلمة المرور الجديدة</label>
+                                <input type="password" id="new-password" required placeholder="كلمة مرور جديدة (8 أحرف على الأقل)">
+                                <small class="password-strength" id="password-strength"></small>
+                            </div>
+                            <div class="form-group">
+                                <label>تأكيد كلمة المرور الجديدة</label>
+                                <input type="password" id="confirm-new-password" required placeholder="أعد إدخال كلمة المرور الجديدة">
+                                <small class="password-match" id="password-match"></small>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-save"></i> حفظ كلمة المرور الجديدة</button>
+                        </form>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3><i class="fa-solid fa-rotate-left"></i> نسيت كلمة المرور (عبر رقم الجوال)</h3>
+                        <p class="settings-desc">يمكنك استعادة الوصول للوحة التحكم عبر رمز تحقق يرسل برسالة SMS إلى رقم الجوال المسجل.</p>
+                        <form id="forgot-password-form">
+                            <div class="form-group">
+                                <label>رقم الجوال المسجل</label>
+                                <input type="tel" id="forgot-phone" required placeholder="01012345678">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>رمز التحقق (6 أرقام)</label>
+                                    <input type="text" id="forgot-otp" required placeholder="123456" maxlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-outline btn-block" id="send-otp-btn" style="margin-top: 28px;"><i class="fa-solid fa-paper-plane"></i> إرسال الرمز</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>كلمة المرور الجديدة</label>
+                                <input type="password" id="forgot-new-password" required placeholder="كلمة مرور جديدة">
+                            </div>
+                            <div class="form-group">
+                                <label>تأكيد كلمة المرور</label>
+                                <input type="password" id="forgot-confirm-password" required placeholder="تأكيد كلمة المرور">
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-block"><i class="fa-solid fa-key"></i> إعادة تعيين كلمة المرور</button>
+                        </form>
+                        <p id="otp-status" class="otp-status hidden"></p>
+                        <p class="rate-limit-note">ملاحظة: لحماية الحساب، يسمح بأقصى 3 محاولات لإرسال الرمز خلال ساعة واحدة، و 5 محاولات إدخال رمز خاطئ قبل القفل المؤقت.</p>
+                    </div>
+                </div>
+
+                <!-- Email Settings -->
+                <div id="settings-emails-tab" class="settings-tab-pane">
+                    <div class="settings-section">
+                        <h3><i class="fa-solid fa-envelope"></i> إيميل تسجيل الدخول</h3>
+                        <p class="settings-desc">هذا الإيميل يستخدم لتسجيل الدخول ولاستقبال إشعارات النظام الحرجة.</p>
+                        <form id="login-email-form">
+                            <div class="form-group">
+                                <label>إيميل تسجيل الدخول الحالي</label>
+                                <input type="email" id="current-login-email" readonly style="background: #f1f5f9;">
+                            </div>
+                            <div class="form-group">
+                                <label>إيميل تسجيل الدخول الجديد</label>
+                                <input type="email" id="new-login-email" placeholder="example@domain.com">
+                            </div>
+                            <div class="form-group">
+                                <label>تأكيد الإيميل الجديد</label>
+                                <input type="email" id="confirm-login-email" placeholder="أعد إدخال الإيميل">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-save"></i> تحديث إيميل تسجيل الدخول</button>
+                        </form>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3><i class="fa-solid fa-bell"></i> إيميل استقبال إشعارات الحجز</h3>
+                        <p class="settings-desc">هذا الإيميل سيستقبل جميع إشعارات الحجوزات الجديدة، التأكيدات، والإلغاءات. يتم تحديثه تلقائياً في منطق الإشعارات.</p>
+                        <form id="notification-email-form">
+                            <div class="form-group">
+                                <label>إيميل الإشعارات الحالي</label>
+                                <input type="email" id="current-notification-email" readonly style="background: #f1f5f9;">
+                            </div>
+                            <div class="form-group">
+                                <label>إيميل الإشعارات الجديد</label>
+                                <input type="email" id="new-notification-email" placeholder="notifications@domain.com">
+                            </div>
+                            <div class="form-group">
+                                <label>تأكيد الإيميل</label>
+                                <input type="email" id="confirm-notification-email" placeholder="أعد إدخال الإيميل">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-save"></i> تحديث إيميل الإشعارات</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Contact Clinic Zone (Chat Widget) -->
+<div id="contact-clinic-zone-modal" class="modal-overlay hidden">
+    <div class="modal-card contact-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-headset"></i> تواصل معنا - كلينيك زون</h2>
+            <button class="modal-close" onclick="closeContactClinicZoneModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="chat-widget">
+                <div class="chat-header">
+                    <div class="chat-avatar">
+                        <i class="fa-solid fa-hospital"></i>
+                    </div>
+                    <div class="chat-info">
+                        <h4>فريق دعم كلينيك زون</h4>
+                        <span class="chat-status">عادةً ما نرد خلال أقل من 3 ساعات</span>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-message bot">
+                        <div class="message-bubble">
+                            مرحباً! كيف يمكننا مساعدتك اليوم؟<br>
+                            <small>ملاحظة: إذا كان الأمر عاجلاً، يرجى ذكر ذلك في بداية رسالتك.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <textarea id="chat-input" placeholder="اكتب رسالتك هنا... (سيتم إرفاق اسم العيادة والكود تلقائياً)" rows="3"></textarea>
+                    <div class="chat-input-actions">
+                        <span class="chat-auto-info"><i class="fa-solid fa-tag"></i> سيتم إرفاق: اسم العيادة + كود العيادة (6 أرقام)</span>
+                        <button type="button" class="btn btn-primary" id="send-chat-btn"><i class="fa-solid fa-paper-plane"></i> إرسال</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Clinic Code -->
+<div id="clinic-code-modal" class="modal-overlay hidden">
+    <div class="modal-card clinic-code-modal">
+        <div class="modal-header">
+            <h2><i class="fa-solid fa-key"></i> كود العيادة</h2>
+            <button class="modal-close" onclick="closeClinicCodeModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="clinic-code-display">
+                <div class="code-label">كود العيادة الفريد (6 أرقام)</div>
+                <div class="code-value" id="clinic-code-value">------</div>
+                <button type="button" class="btn btn-primary btn-block" id="copy-clinic-code-btn"><i class="fa-solid fa-copy"></i> نسخ الكود</button>
+            </div>
+            <div class="code-info">
+                <h4><i class="fa-solid fa-circle-info"></i> معلومات عن كود العيادة</h4>
+                <ul>
+                    <li>هذا الكود فريد لكل عيادة ومسجل في نظام كلينيك زون</li>
+                    <li>يستخدم لربط صفحة المريض بلوحة الطبيب</li>
+                    <li>يمكن مشاركته مع فريق الدعم الفني لاستكشاف الأخطاء بسرعة</li>
+                    <li>لا تشارك هذا الكود علناً إلا عند الضرورة</li>
+                </ul>
+            </div>
+            <div class="code-actions">
+                <button type="button" class="btn btn-outline" id="regenerate-clinic-code-btn"><i class="fa-solid fa-rotate"></i> توليد كود جديد</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EmailJS Browser SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <!-- Firebase Realtime Database v10 Compat Scripts -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>

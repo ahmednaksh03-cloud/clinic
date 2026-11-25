@@ -731,6 +731,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize Side Drawer
         initSideDrawer();
 
+        // Initialize new modals
+        initEditPatientPageModal();
+        initManageDashboardModal();
+        initAccountSettingsModal();
+        initContactClinicZoneModal();
+        initClinicCodeModal();
+
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -1181,4 +1188,1225 @@ document.addEventListener('DOMContentLoaded', () => {
             parent.innerHTML = '<i class="fa-solid fa-user-doctor" style="font-size: 4rem; color: var(--primary);"></i>';
         }
     };
+
+    // ==========================================
+    // EDIT PATIENT PAGE MODAL
+    // ==========================================
+    function initEditPatientPageModal() {
+        const modal = document.getElementById('edit-patient-modal');
+        const openBtn = document.querySelector('.drawer-nav a[onclick*="edit-patient-modal"]');
+
+        // Find the drawer menu item that opens this modal
+        const editMenuItem = document.querySelector('.drawer-nav li:first-child a');
+        if (editMenuItem) {
+            editMenuItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                openEditPatientModal();
+            });
+        }
+
+        function openEditPatientModal() {
+            if (modal) {
+                modal.classList.remove('hidden');
+                loadPatientPageDraft();
+            }
+        }
+
+        window.closeEditPatientModal = function() {
+            if (modal) modal.classList.add('hidden');
+        };
+
+        // Tab switching
+        modal?.querySelectorAll('.edit-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                modal.querySelectorAll('.edit-tab-btn').forEach(b => b.classList.remove('active'));
+                modal.querySelectorAll('.edit-tab-pane').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+            });
+        });
+
+        // Add working hours entry
+        const addHoursBtn = document.getElementById('add-hours-btn');
+        if (addHoursBtn) {
+            addHoursBtn.addEventListener('click', () => {
+                const container = document.getElementById('working-hours-container');
+                const entry = document.createElement('div');
+                entry.className = 'working-hours-entry';
+                entry.innerHTML = `
+                    <div class="form-group">
+                        <label>اليوم</label>
+                        <select>
+                            <option value="السبت">السبت</option>
+                            <option value="الأحد">الأحد</option>
+                            <option value="الإثنين">الإثنين</option>
+                            <option value="الثلاثاء">الثلاثاء</option>
+                            <option value="الأربعاء">الأربعاء</option>
+                            <option value="الخميس">الخميس</option>
+                            <option value="الجمعة">الجمعة</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>من</label>
+                        <input type="time" step="1800">
+                    </div>
+                    <div class="form-group">
+                        <label>إلى</label>
+                        <input type="time" step="1800">
+                    </div>
+                    <button class="remove-entry-btn" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                container.appendChild(entry);
+                entry.querySelector('.remove-entry-btn').addEventListener('click', () => entry.remove());
+            });
+        }
+
+        // Add address entry
+        const addAddressBtn = document.getElementById('add-address-btn');
+        if (addAddressBtn) {
+            addAddressBtn.addEventListener('click', () => {
+                const container = document.getElementById('addresses-container');
+                const entry = document.createElement('div');
+                entry.className = 'address-entry';
+                entry.innerHTML = `
+                    <div class="form-group" style="grid-column: span 3;">
+                        <label>العنوان</label>
+                        <input type="text" placeholder="مثال: شارع الجمهورية - برج الأطباء التخصصي - الدور الثالث">
+                    </div>
+                    <button class="remove-entry-btn" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                container.appendChild(entry);
+                entry.querySelector('.remove-entry-btn').addEventListener('click', () => entry.remove());
+            });
+        }
+
+        // Add service entry
+        const addServiceBtn = document.getElementById('add-service-btn');
+        if (addServiceBtn) {
+            addServiceBtn.addEventListener('click', () => {
+                const container = document.getElementById('services-container');
+                const entry = document.createElement('div');
+                entry.className = 'service-entry';
+                entry.innerHTML = `
+                    <div class="form-group">
+                        <label>اسم الخدمة</label>
+                        <input type="text" placeholder="مثال: متابعة حمل">
+                    </div>
+                    <div class="form-group">
+                        <label>الرمز/الأيقونة</label>
+                        <input type="text" placeholder="fa-solid fa-baby">
+                    </div>
+                    <div class="form-group">
+                        <label>الوصف المختصر</label>
+                        <input type="text" placeholder="رعاية دورية دقيقة...">
+                    </div>
+                    <button class="remove-entry-btn" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                container.appendChild(entry);
+                entry.querySelector('.remove-entry-btn').addEventListener('click', () => entry.remove());
+            });
+        }
+
+        // Save draft
+        const saveDraftBtn = document.getElementById('save-draft-btn');
+        if (saveDraftBtn) {
+            saveDraftBtn.addEventListener('click', savePatientPageDraft);
+        }
+
+        // Publish
+        const publishBtn = document.getElementById('publish-patient-page-btn');
+        if (publishBtn) {
+            publishBtn.addEventListener('click', publishPatientPage);
+        }
+
+        function savePatientPageDraft() {
+            const draftData = collectPatientPageData();
+            draftData.lastUpdated = new Date().toISOString();
+            draftData.isDraft = true;
+
+            database.ref('clinic_page/draft').set(draftData).then(() => {
+                alert('تم حفظ المسودة بنجاح');
+            }).catch(err => {
+                console.error('Error saving draft:', err);
+                alert('حدث خطأ في حفظ المسودة');
+            });
+        }
+
+        function publishPatientPage() {
+            const draftData = collectPatientPageData();
+            draftData.lastUpdated = new Date().toISOString();
+            draftData.isDraft = false;
+            draftData.publishedAt = new Date().toISOString();
+
+            database.ref('clinic_page/published').set(draftData).then(() => {
+                // Also update draft to reflect published state
+                database.ref('clinic_page/draft').update({ isDraft: false, publishedAt: draftData.publishedAt });
+                alert('تم نشر صفحة المريض بنجاح!');
+                closeEditPatientModal();
+            }).catch(err => {
+                console.error('Error publishing:', err);
+                alert('حدث خطأ في النشر');
+            });
+        }
+
+        function collectPatientPageData() {
+            const data = {
+                doctor: {
+                    name: document.getElementById('edit-doc-name').value,
+                    title: document.getElementById('edit-doc-title').value,
+                    credentials: document.getElementById('edit-doc-credentials').value.split('\n').filter(c => c.trim()),
+                    image: document.getElementById('edit-doc-image').value || 'doctor.jpeg'
+                },
+                workingHours: [],
+                addresses: [],
+                services: [],
+                footer: {
+                    phone: document.getElementById('edit-footer-phone').value,
+                    email: document.getElementById('edit-footer-email').value,
+                    address: document.getElementById('edit-footer-address').value,
+                    hours: document.getElementById('edit-footer-hours').value
+                }
+            };
+
+            // Collect working hours
+            document.querySelectorAll('#working-hours-container .working-hours-entry').forEach(entry => {
+                const selects = entry.querySelectorAll('select');
+                const inputs = entry.querySelectorAll('input[type="time"]');
+                if (selects[0]?.value) {
+                    data.workingHours.push({
+                        day: selects[0].value,
+                        from: inputs[0]?.value || '',
+                        to: inputs[1]?.value || ''
+                    });
+                }
+            });
+
+            // Collect addresses
+            document.querySelectorAll('#addresses-container .address-entry input').forEach(input => {
+                if (input.value.trim()) {
+                    data.addresses.push(input.value.trim());
+                }
+            });
+
+            // Collect services
+            document.querySelectorAll('#services-container .service-entry').forEach(entry => {
+                const inputs = entry.querySelectorAll('input');
+                if (inputs[0]?.value) {
+                    data.services.push({
+                        name: inputs[0].value,
+                        icon: inputs[1]?.value || 'fa-solid fa-stethoscope',
+                        description: inputs[2]?.value || ''
+                    });
+                }
+            });
+
+            return data;
+        }
+
+        function loadPatientPageDraft() {
+            database.ref('clinic_page/draft').once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    populateEditForm(data);
+                } else {
+                    // Load from published if no draft
+                    database.ref('clinic_page/published').once('value', (pubSnap) => {
+                        const pubData = pubSnap.val();
+                        if (pubData) populateEditForm(pubData);
+                    });
+                }
+            });
+        }
+
+        function populateEditForm(data) {
+            if (data.doctor) {
+                document.getElementById('edit-doc-name').value = data.doctor.name || '';
+                document.getElementById('edit-doc-title').value = data.doctor.title || '';
+                document.getElementById('edit-doc-credentials').value = (data.doctor.credentials || []).join('\n');
+                document.getElementById('edit-doc-image').value = data.doctor.image || 'doctor.jpeg';
+            }
+
+            if (data.workingHours?.length) {
+                const container = document.getElementById('working-hours-container');
+                container.innerHTML = '';
+                data.workingHours.forEach(wh => {
+                    const entry = document.createElement('div');
+                    entry.className = 'working-hours-entry';
+                    entry.innerHTML = `
+                        <div class="form-group">
+                            <label>اليوم</label>
+                            <select>
+                                <option value="السبت" ${wh.day === 'السبت' ? 'selected' : ''}>السبت</option>
+                                <option value="الأحد" ${wh.day === 'الأحد' ? 'selected' : ''}>الأحد</option>
+                                <option value="الإثنين" ${wh.day === 'الإثنين' ? 'selected' : ''}>الإثنين</option>
+                                <option value="الثلاثاء" ${wh.day === 'الثلاثاء' ? 'selected' : ''}>الثلاثاء</option>
+                                <option value="الأربعاء" ${wh.day === 'الأربعاء' ? 'selected' : ''}>الأربعاء</option>
+                                <option value="الخميس" ${wh.day === 'الخميس' ? 'selected' : ''}>الخميس</option>
+                                <option value="الجمعة" ${wh.day === 'الجمعة' ? 'selected' : ''}>الجمعة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>من</label>
+                            <input type="time" step="1800" value="${wh.from || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>إلى</label>
+                            <input type="time" step="1800" value="${wh.to || ''}">
+                        </div>
+                        <button class="remove-entry-btn" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+                    `;
+                    container.appendChild(entry);
+                    entry.querySelector('.remove-entry-btn').addEventListener('click', () => entry.remove());
+                });
+            }
+
+            if (data.addresses?.length) {
+                const container = document.getElementById('addresses-container');
+                container.innerHTML = '';
+                data.addresses.forEach(addr => {
+                    const entry = document.createElement('div');
+                    entry.className = 'address-entry';
+                    entry.innerHTML = `
+                        <div class="form-group" style="grid-column: span 3;">
+                            <label>العنوان</label>
+                            <input type="text" value="${addr}">
+                        </div>
+                        <button class="remove-entry-btn" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+                    `;
+                    container.appendChild(entry);
+                    entry.querySelector('.remove-entry-btn').addEventListener('click', () => entry.remove());
+                });
+            }
+
+            if (data.services?.length) {
+                const container = document.getElementById('services-container');
+                container.innerHTML = '';
+                data.services.forEach(svc => {
+                    const entry = document.createElement('div');
+                    entry.className = 'service-entry';
+                    entry.innerHTML = `
+                        <div class="form-group">
+                            <label>اسم الخدمة</label>
+                            <input type="text" value="${svc.name}">
+                        </div>
+                        <div class="form-group">
+                            <label>الرمز/الأيقونة</label>
+                            <input type="text" value="${svc.icon}">
+                        </div>
+                        <div class="form-group">
+                            <label>الوصف المختصر</label>
+                            <input type="text" value="${svc.description || ''}">
+                        </div>
+                        <button class="remove-entry-btn" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+                    `;
+                    container.appendChild(entry);
+                    entry.querySelector('.remove-entry-btn').addEventListener('click', () => entry.remove());
+                });
+            }
+
+            if (data.footer) {
+                document.getElementById('edit-footer-phone').value = data.footer.phone || '';
+                document.getElementById('edit-footer-email').value = data.footer.email || '';
+                document.getElementById('edit-footer-address').value = data.footer.address || '';
+                document.getElementById('edit-footer-hours').value = data.footer.hours || '';
+            }
+        }
+
+        // Render preview
+        const previewBtn = document.getElementById('preview-patient-page-btn');
+        if (previewBtn) {
+            previewBtn.addEventListener('click', () => {
+                const draftData = collectPatientPageData();
+                renderPatientPagePreview(draftData);
+                // Switch to preview tab
+                modal.querySelectorAll('.edit-tab-btn').forEach(b => b.classList.remove('active'));
+                modal.querySelectorAll('.edit-tab-pane').forEach(p => p.classList.remove('active'));
+                document.querySelector('.edit-tab-btn[data-tab="preview"]').classList.add('active');
+                document.getElementById('preview-tab').classList.add('active');
+            });
+        }
+
+        function renderPatientPagePreview(data) {
+            const previewContainer = document.getElementById('patient-page-preview');
+            if (!previewContainer) return;
+
+            const doctor = data.doctor || {};
+            const hours = data.workingHours || [];
+            const addresses = data.addresses || [];
+            const services = data.services || [];
+            const footer = data.footer || {};
+
+            let hoursHtml = '';
+            hours.forEach(h => {
+                hoursHtml += `<li><i class="fa-regular fa-clock"></i> ${h.day}: ${h.from} - ${h.to}</li>`;
+            });
+
+            let addressesHtml = '';
+            addresses.forEach(a => {
+                addressesHtml += `<li><i class="fa-solid fa-location-dot"></i> ${a}</li>`;
+            });
+
+            let servicesHtml = '';
+            services.forEach(s => {
+                servicesHtml += `
+                    <div class="service-card-modern">
+                        <div class="service-img-wrapper">
+                            <div class="service-fallback-icon"><i class="${s.icon}"></i></div>
+                        </div>
+                        <div class="service-card-body">
+                            <div class="service-header-icon"><i class="${s.icon}"></i></div>
+                            <h3>${s.name}</h3>
+                            <p>${s.description}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            previewContainer.innerHTML = `
+                <section class="hero-section">
+                    <div class="container hero-container">
+                        <div class="hero-content">
+                            <span class="badge"><i class="fa-solid fa-award"></i> رعاية طبية متكاملة بأحدث المعايير</span>
+                            <h2>${doctor.name ? `نعتني بصحتك مع ${doctor.name}` : 'نعتني بصحتك وبداية حياة جديدة لمولودك بكل حب وأمان'}</h2>
+                            <p>في كلينيك زون، نوفر لكِ بيئة طبية هادئة ومريحة مجهزة بأحدث أجهزة السونار والتقنيات الطبية المتقدمة تحت إشراف نخبة من الاستشاريين المتخصصين.</p>
+                            <div class="hero-buttons">
+                                <a href="#booking-section" class="btn btn-primary"><i class="fa-solid fa-calendar-check"></i> احجزي موعدك الآن</a>
+                                <a href="#services-section" class="btn btn-outline"><i class="fa-solid fa-stethoscope"></i> خدماتنا الطبية</a>
+                            </div>
+                        </div>
+                        <div class="doctor-profile-card">
+                            <div class="doc-avatar">
+                                <img src="${doctor.image || 'doctor.jpeg'}" alt="${doctor.name || 'الدكتور'}" onerror="handleDoctorImgFallback(this)">
+                            </div>
+                            <h3>${doctor.name || 'د. أحمد السيد'}</h3>
+                            <p class="doc-title">${doctor.title || 'استشاري أمراض النساء والتوليد'}</p>
+                            <ul class="doc-credentials">
+                                ${(doctor.credentials || []).map(c => `<li><i class="fa-solid fa-circle-check"></i> ${c}</li>`).join('')}
+                            </ul>
+                            <div class="clinic-hours">
+                                ${hoursHtml || '<i class="fa-regular fa-clock"></i> مواعيد العيادة: السبت - الخميس (٤ م - ١٠ م)'}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section id="services-section" class="services-section container">
+                    <div class="section-title">
+                        <h2>خدماتنا الطبية المتميزة</h2>
+                        <p>رعاية طبية تخصصية متكاملة لصحة المرأة في جميع مراحل حياتها</p>
+                    </div>
+                    <div class="services-grid services-5-grid">
+                        ${servicesHtml || '<div style="text-align:center;color:var(--text-muted);padding:2rem;">لا توجد خدمات محددة بعد</div>'}
+                    </div>
+                </section>
+                <section class="booking-section" style="padding: 60px 0;">
+                    <div class="container">
+                        <div class="section-title">
+                            <h2>معلومات التواصل والعنوان</h2>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:30px;">
+                            <div>
+                                <h3 style="color:var(--primary);margin-bottom:15px;"><i class="fa-solid fa-location-dot"></i> العناوين</h3>
+                                <ul style="list-style:none;padding:0;">${addressesHtml || '<li><i class="fa-solid fa-location-dot"></i> شارع الجمهورية - برج الأطباء التخصصي - الدور الثالث</li>'}</ul>
+                            </div>
+                            <div>
+                                <h3 style="color:var(--primary);margin-bottom:15px;"><i class="fa-regular fa-clock"></i> مواعيد العمل</h3>
+                                <ul style="list-style:none;padding:0;">${hoursHtml || '<li><i class="fa-regular fa-clock"></i> السبت - الخميس: 4:00 م - 10:00 م</li><li><i class="fa-solid fa-calendar-xmark"></i> الجمعة: إجازة</li>'}</ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+    }
+
+    // ==========================================
+    // MANAGE DASHBOARD MODAL
+    // ==========================================
+    function initManageDashboardModal() {
+        const modal = document.getElementById('manage-dashboard-modal');
+        const manageMenuItem = document.querySelector('.drawer-nav li:nth-child(2) a');
+        if (manageMenuItem) {
+            manageMenuItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                openManageDashboardModal();
+            });
+        }
+
+        function openManageDashboardModal() {
+            if (modal) {
+                modal.classList.remove('hidden');
+                loadDashboardTheme();
+                renderBookingsManagement();
+                initCalendarView();
+            }
+        }
+
+        window.closeManageDashboardModal = function() {
+            if (modal) modal.classList.add('hidden');
+        };
+
+        // Tab switching
+        modal?.querySelectorAll('.manage-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                modal.querySelectorAll('.manage-tab-btn').forEach(b => b.classList.remove('active'));
+                modal.querySelectorAll('.manage-tab-pane').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+
+                // Initialize calendar when tab is shown
+                if (btn.dataset.tab === 'calendar') {
+                    initCalendarView();
+                }
+            });
+        });
+
+        // Bookings Management - Search and Filter
+        const mgmtSearch = document.getElementById('mgmt-search');
+        const mgmtFilterStatus = document.getElementById('mgmt-filter-status');
+        const mgmtFilterDate = document.getElementById('mgmt-filter-date');
+
+        [mgmtSearch, mgmtFilterStatus, mgmtFilterDate].forEach(el => {
+            if (el) el.addEventListener('input', renderBookingsManagement);
+        });
+
+        function renderBookingsManagement() {
+            const tbody = document.getElementById('mgmt-bookings-table-body');
+            if (!tbody) return;
+
+            const bookings = window.allBookings || [];
+            const searchTerm = mgmtSearch?.value.toLowerCase() || '';
+            const statusFilter = mgmtFilterStatus?.value || '';
+            const dateFilter = mgmtFilterDate?.value || '';
+
+            let filtered = bookings.filter(b => {
+                const matchesSearch = !searchTerm ||
+                    b.name.toLowerCase().includes(searchTerm) ||
+                    b.phone.includes(searchTerm);
+                const matchesStatus = !statusFilter || b.status === statusFilter;
+                const matchesDate = !dateFilter || b.date === dateFilter;
+                return matchesSearch && matchesStatus && matchesDate;
+            });
+
+            // Sort by date desc, then time desc
+            filtered.sort((a, b) => {
+                if (a.date !== b.date) return new Date(b.date) - new Date(a.date);
+                return b.time.localeCompare(a.time);
+            });
+
+            tbody.innerHTML = '';
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">لا توجد حجوزات مطابقة</td></tr>';
+                return;
+            }
+
+            filtered.forEach(b => {
+                const statusClass = b.status === 'مؤكد' ? 'status-confirmed' :
+                                    (b.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
+                const dateParts = b.date.split('-');
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                let displayPhone = b.phone;
+                if (displayPhone.startsWith('01')) displayPhone = '20' + displayPhone.slice(2);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${b.name}</strong></td>
+                    <td>${formattedDate}<br><small>${b.time}</small></td>
+                    <td><span style="color:var(--primary-dark);font-weight:700;">${b.visitType}</span></td>
+                    <td><a href="#" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}'); return false;">${displayPhone}</a></td>
+                    <td><span class="status-badge ${statusClass}">${b.status}</span></td>
+                    <td>${b.notes || '-'}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="action-btn btn-confirm" onclick="updateBookingStatus('${b.id}', 'مؤكد')" title="تأكيد"><i class="fa-solid fa-check"></i></button>
+                            <button class="action-btn btn-cancel" onclick="updateBookingStatus('${b.id}', 'ملغي')" title="إلغاء"><i class="fa-solid fa-xmark"></i></button>
+                            <button class="action-btn btn-whatsapp" onclick="openWhatsApp('${b.phone}', 'مرحباً ${b.name}')"><i class="fa-brands fa-whatsapp"></i></button>
+                            <button class="action-btn btn-danger" onclick="deleteBooking('${b.id}')" title="حذف" style="background:var(--danger);border-color:var(--danger);width:auto;padding:0 10px;"> حذف </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Calendar View
+        let currentCalDate = new Date();
+
+        function initCalendarView() {
+            renderCalendar(currentCalDate);
+            setupCalendarNavigation();
+        }
+
+        function setupCalendarNavigation() {
+            const prevBtn = document.getElementById('cal-prev-month');
+            const nextBtn = document.getElementById('cal-next-month');
+            const todayBtn = document.getElementById('cal-today');
+
+            if (prevBtn) prevBtn.onclick = () => navigateCalendar(-1);
+            if (nextBtn) nextBtn.onclick = () => navigateCalendar(1);
+            if (todayBtn) todayBtn.onclick = () => { currentCalDate = new Date(); renderCalendar(currentCalDate); };
+        }
+
+        function navigateCalendar(delta) {
+            currentCalDate.setMonth(currentCalDate.getMonth() + delta);
+            renderCalendar(currentCalDate);
+        }
+
+        function renderCalendar(date) {
+            const grid = document.getElementById('calendar-grid');
+            const title = document.getElementById('cal-title');
+            if (!grid || !title) return;
+
+            const year = date.getFullYear();
+            const month = date.getMonth();
+
+            const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+            title.textContent = `${monthNames[month]} ${year}`;
+
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1).getDay(); // 0 = Sunday
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            // Adjust for RTL (Saturday = 0 in Arabic locale, but JS uses Sunday = 0)
+            // In Arabic calendar, week starts Saturday
+            const dayNames = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
+
+            // Clear grid except headers
+            grid.innerHTML = '';
+            dayNames.forEach(d => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.textContent = d;
+                grid.appendChild(header);
+            });
+
+            // Get bookings for this month
+            const bookings = window.allBookings || [];
+            const monthBookings = bookings.filter(b => {
+                const bDate = new Date(b.date);
+                return bDate.getFullYear() === year && bDate.getMonth() === month && b.status !== 'ملغي';
+            });
+
+            // Group bookings by day
+            const bookingsByDay = {};
+            monthBookings.forEach(b => {
+                const day = new Date(b.date).getDate();
+                if (!bookingsByDay[day]) bookingsByDay[day] = [];
+                bookingsByDay[day].push(b);
+            });
+
+            // Calculate starting offset (convert JS Sunday=0 to Saturday=0)
+            const startOffset = (firstDay + 6) % 7; // Saturday = 0
+
+            // Previous month days
+            for (let i = startOffset - 1; i >= 0; i--) {
+                const dayNum = prevMonthDays - i;
+                const dayEl = createCalendarDay(dayNum, true, []);
+                grid.appendChild(dayEl);
+            }
+
+            // Current month days
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayBookings = bookingsByDay[day] || [];
+                const isToday = isCurrentMonth && today.getDate() === day;
+                const dayEl = createCalendarDay(day, false, dayBookings, isToday);
+                grid.appendChild(dayEl);
+            }
+
+            // Next month days to fill grid
+            const totalCells = startOffset + daysInMonth;
+            const nextMonthDaysNeeded = Math.ceil(totalCells / 7) * 7 - totalCells;
+            for (let day = 1; day <= nextMonthDaysNeeded; day++) {
+                const dayEl = createCalendarDay(day, true, []);
+                grid.appendChild(dayEl);
+            }
+        }
+
+        function createCalendarDay(dayNum, isOtherMonth, bookings, isToday = false) {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'calendar-day' + (isOtherMonth ? ' other-month' : '');
+
+            // Check for conflicts and density
+            const activeBookings = bookings.filter(b => b.status !== 'ملغي');
+            const hasConflict = activeBookings.length > 1 && activeBookings.some((b, i) =>
+                activeBookings.some((b2, j) => i !== j && b.time === b2.time)
+            );
+            const isHighDensity = activeBookings.length >= 4;
+
+            if (hasConflict) dayEl.classList.add('conflict');
+            else if (isHighDensity) dayEl.classList.add('high-density');
+
+            let html = `<div class="calendar-day-number">${dayNum}</div>`;
+            if (isToday) html += `<span class="density-warning" style="background:var(--primary);color:white;">اليوم</span>`;
+            else if (hasConflict) html += `<span class="density-warning">تعارض</span>`;
+            else if (isHighDensity) html += `<span class="density-warning">كثافة</span>`;
+
+            activeBookings.forEach(b => {
+                const statusClass = b.status === 'مؤكد' ? 'confirmed' : 'pending';
+                html += `<div class="calendar-booking ${statusClass}" title="${b.name} - ${b.time}">${b.time} ${b.name.substring(0,8)}</div>`;
+            });
+
+            dayEl.innerHTML = html;
+            return dayEl;
+        }
+
+        // Theme Colors
+        const themeOptions = document.querySelectorAll('.theme-option');
+        themeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const theme = option.dataset.theme;
+                applyDashboardTheme(theme);
+                themeOptions.forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                saveDashboardTheme(theme);
+            });
+        });
+
+        function applyDashboardTheme(theme) {
+            const root = document.documentElement;
+            const themes = {
+                default: { primary: '#0d9488', 'primary-light': '#ccfbf1', 'primary-dark': '#0f766e' },
+                blue: { primary: '#3b82f6', 'primary-light': '#dbeafe', 'primary-dark': '#2563eb' },
+                green: { primary: '#10b981', 'primary-light': '#d1fae5', 'primary-dark': '#059669' },
+                purple: { primary: '#8b5cf6', 'primary-light': '#ede9fe', 'primary-dark': '#7c3aed' },
+                orange: { primary: '#f97316', 'primary-light': '#ffedd5', 'primary-dark': '#ea580c' },
+                red: { primary: '#ef4444', 'primary-light': '#fee2e2', 'primary-dark': '#dc2626' }
+            };
+
+            const colors = themes[theme] || themes.default;
+            Object.entries(colors).forEach(([key, value]) => {
+                root.style.setProperty(`--${key}`, value);
+            });
+        }
+
+        function saveDashboardTheme(theme) {
+            localStorage.setItem('dashboard_theme', theme);
+            // Also save to Firebase for cross-device sync
+            database.ref('clinic_settings/theme').set(theme).catch(console.error);
+        }
+
+        function loadDashboardTheme() {
+            const saved = localStorage.getItem('dashboard_theme') || 'default';
+            applyDashboardTheme(saved);
+            themeOptions.forEach(o => o.classList.toggle('active', o.dataset.theme === saved));
+        }
+    }
+
+    // ==========================================
+    // ACCOUNT SETTINGS MODAL
+    // ==========================================
+    function initAccountSettingsModal() {
+        const modal = document.getElementById('account-settings-modal');
+        const accountMenuItem = document.querySelector('.drawer-nav li:nth-child(3) a');
+        if (accountMenuItem) {
+            accountMenuItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                openAccountSettingsModal();
+            });
+        }
+
+        function openAccountSettingsModal() {
+            if (modal) {
+                modal.classList.remove('hidden');
+                loadAccountSettings();
+            }
+        }
+
+        window.closeAccountSettingsModal = function() {
+            if (modal) modal.classList.add('hidden');
+        };
+
+        // Tab switching
+        modal?.querySelectorAll('.settings-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                modal.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
+                modal.querySelectorAll('.settings-tab-pane').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+            });
+        });
+
+        // Password change form
+        const changePwdForm = document.getElementById('change-password-form');
+        if (changePwdForm) {
+            changePwdForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                changePassword();
+            });
+        }
+
+        // Password strength meter
+        const newPwdInput = document.getElementById('new-password');
+        if (newPwdInput) {
+            newPwdInput.addEventListener('input', checkPasswordStrength);
+        }
+
+        // Password match check
+        const confirmPwdInput = document.getElementById('confirm-password');
+        if (confirmPwdInput) {
+            confirmPwdInput.addEventListener('input', checkPasswordMatch);
+        }
+
+        // Forgot password form
+        const forgotPwdForm = document.getElementById('forgot-password-form');
+        if (forgotPwdForm) {
+            forgotPwdForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                sendForgotPasswordOTP();
+            });
+        }
+
+        // OTP verification form
+        const otpForm = document.getElementById('otp-verification-form');
+        if (otpForm) {
+            otpForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                verifyOTP();
+            });
+        }
+
+        // Resend OTP
+        const resendOtpBtn = document.getElementById('resend-otp-btn');
+        if (resendOtpBtn) {
+            resendOtpBtn.addEventListener('click', resendOTP);
+        }
+
+        // Email settings form
+        const emailForm = document.getElementById('email-settings-form');
+        if (emailForm) {
+            emailForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveEmailSettings();
+            });
+        }
+
+        function loadAccountSettings() {
+            // Load from localStorage
+            const loginEmail = localStorage.getItem('doctor_login_email');
+            const notifyEmail = localStorage.getItem('doctor_notify_email');
+
+            if (loginEmail) document.getElementById('login-email').value = loginEmail;
+            if (notifyEmail) document.getElementById('notify-email').value = notifyEmail;
+        }
+
+        function checkPasswordStrength() {
+            const pwd = newPwdInput.value;
+            const strengthEl = document.getElementById('password-strength');
+            if (!strengthEl) return;
+
+            let strength = 0;
+            if (pwd.length >= 8) strength++;
+            if (/[A-Z]/.test(pwd)) strength++;
+            if (/[a-z]/.test(pwd)) strength++;
+            if (/[0-9]/.test(pwd)) strength++;
+            if (/[^A-Za-z0-9]/.test(pwd)) strength++;
+
+            strengthEl.className = 'password-strength';
+            if (strength <= 2) {
+                strengthEl.textContent = 'ضعيفة - أضف أحرف كبيرة وصغيرة وأرقام ورموز';
+                strengthEl.classList.add('weak');
+            } else if (strength <= 3) {
+                strengthEl.textContent = 'متوسطة - جيدة ولكن يمكن تحسينها';
+                strengthEl.classList.add('medium');
+            } else {
+                strengthEl.textContent = 'قوية - كلمة مرور ممتازة';
+                strengthEl.classList.add('strong');
+            }
+        }
+
+        function checkPasswordMatch() {
+            const pwd = newPwdInput?.value;
+            const confirm = confirmPwdInput?.value;
+            const matchEl = document.getElementById('password-match');
+            if (!matchEl) return;
+
+            if (!confirm) {
+                matchEl.textContent = '';
+                matchEl.className = 'password-match';
+            } else if (pwd === confirm) {
+                matchEl.textContent = 'كلمات المرور متطابقة ✓';
+                matchEl.className = 'password-match match';
+            } else {
+                matchEl.textContent = 'كلمات المرور غير متطابقة ✗';
+                matchEl.className = 'password-match no-match';
+            }
+        }
+
+        function changePassword() {
+            const current = document.getElementById('current-password').value;
+            const newPwd = newPwdInput.value;
+            const confirm = confirmPwdInput.value;
+
+            if (current !== '1234') {
+                alert('كلمة المرور الحالية غير صحيحة');
+                return;
+            }
+
+            if (newPwd !== confirm) {
+                alert('كلمات المرور الجديدة غير متطابقة');
+                return;
+            }
+
+            if (newPwd.length < 8) {
+                alert('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+                return;
+            }
+
+            // In a real app, this would update Firebase Auth
+            // For now, we'll store in localStorage as a demo
+            localStorage.setItem('doctor_password', newPwd);
+            alert('تم تغيير كلمة المرور بنجاح');
+            changePwdForm.reset();
+            document.getElementById('password-strength').textContent = '';
+            document.getElementById('password-match').textContent = '';
+        }
+
+        // SMS OTP rate limiting
+        let otpAttempts = 0;
+        let lastOtpTime = 0;
+        const MAX_OTP_ATTEMPTS = 3;
+        const OTP_COOLDOWN_MS = 60000; // 1 minute
+
+        function sendForgotPasswordOTP() {
+            const phone = document.getElementById('forgot-phone').value;
+            if (!phone) {
+                alert('يرجى إدخال رقم الهاتف');
+                return;
+            }
+
+            const now = Date.now();
+            if (otpAttempts >= MAX_OTP_ATTEMPTS && now - lastOtpTime < OTP_COOLDOWN_MS) {
+                const waitTime = Math.ceil((OTP_COOLDOWN_MS - (now - lastOtpTime)) / 1000);
+                showOTPStatus(`يرجى الانتظار ${waitTime} ثانية قبل طلب رمز جديد`, 'error');
+                return;
+            }
+
+            // Simulate sending OTP
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            localStorage.setItem('doctor_reset_otp', otp);
+            localStorage.setItem('doctor_reset_phone', phone);
+            lastOtpTime = now;
+            otpAttempts++;
+
+            // Show OTP verification form
+            document.getElementById('forgot-password-form').classList.add('hidden');
+            document.getElementById('otp-verification-form').classList.remove('hidden');
+            document.getElementById('otp-phone-display').textContent = phone;
+
+            showOTPStatus('تم إرسال رمز التحقق إلى واتساب (محاكاة)', 'sent');
+
+            // For demo, also log to console
+            console.log('OTP for password reset:', otp);
+        }
+
+        function verifyOTP() {
+            const enteredOtp = document.getElementById('otp-code').value;
+            const storedOtp = localStorage.getItem('doctor_reset_otp');
+            const phone = localStorage.getItem('doctor_reset_phone');
+
+            if (enteredOtp === storedOtp) {
+                showOTPStatus('تم التحقق بنجاح! يمكنك الآن تعيين كلمة مرور جديدة', 'success');
+                setTimeout(() => {
+                    document.getElementById('otp-verification-form').classList.add('hidden');
+                    document.getElementById('set-new-password-form').classList.remove('hidden');
+                }, 1500);
+            } else {
+                showOTPStatus('رمز التحقق غير صحيح', 'error');
+            }
+        }
+
+        function resendOTP() {
+            const phone = document.getElementById('otp-phone-display').textContent;
+            document.getElementById('forgot-phone').value = phone;
+            sendForgotPasswordOTP();
+        }
+
+        function showOTPStatus(message, type) {
+            const statusEl = document.getElementById('otp-status');
+            if (!statusEl) return;
+            statusEl.textContent = message;
+            statusEl.className = 'otp-status ' + type;
+        }
+
+        // Set new password after OTP verification
+        const setNewPwdForm = document.getElementById('set-new-password-form');
+        if (setNewPwdForm) {
+            setNewPwdForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newPwd = document.getElementById('new-password-after-otp').value;
+                const confirm = document.getElementById('confirm-password-after-otp').value;
+
+                if (newPwd !== confirm) {
+                    alert('كلمات المرور غير متطابقة');
+                    return;
+                }
+                if (newPwd.length < 8) {
+                    alert('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+                    return;
+                }
+
+                localStorage.setItem('doctor_password', newPwd);
+                localStorage.removeItem('doctor_reset_otp');
+                localStorage.removeItem('doctor_reset_phone');
+                otpAttempts = 0;
+
+                alert('تم تعيين كلمة المرور الجديدة بنجاح');
+                setNewPwdForm.reset();
+                document.getElementById('set-new-password-form').classList.add('hidden');
+                document.getElementById('forgot-password-form').classList.remove('hidden');
+            });
+        }
+
+        function saveEmailSettings() {
+            const loginEmail = document.getElementById('login-email').value;
+            const notifyEmail = document.getElementById('notify-email').value;
+
+            if (loginEmail && !loginEmail.includes('@')) {
+                alert('بريد الدخول الإلكتروني غير صحيح');
+                return;
+            }
+            if (notifyEmail && !notifyEmail.includes('@')) {
+                alert('بريد الإشعارات غير صحيح');
+                return;
+            }
+
+            localStorage.setItem('doctor_login_email', loginEmail);
+            localStorage.setItem('doctor_notify_email', notifyEmail);
+
+            // Also save to Firebase
+            database.ref('clinic_settings/emails').set({
+                login: loginEmail,
+                notifications: notifyEmail
+            }).catch(console.error);
+
+            alert('تم حفظ إعدادات البريد الإلكتروني بنجاح');
+        }
+    }
+
+    // ==========================================
+    // CONTACT CLINIC ZONE MODAL
+    // ==========================================
+    function initContactClinicZoneModal() {
+        const modal = document.getElementById('contact-clinic-zone-modal');
+        const contactMenuItem = document.querySelector('.drawer-nav li:nth-child(4) a');
+        if (contactMenuItem) {
+            contactMenuItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                openContactModal();
+            });
+        }
+
+        function openContactModal() {
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Auto-attach clinic name and code
+                attachClinicInfoToChat();
+            }
+        }
+
+        window.closeContactModal = function() {
+            if (modal) modal.classList.add('hidden');
+        };
+
+        // Send message
+        const sendBtn = document.getElementById('chat-send-btn');
+        const chatInput = document.getElementById('chat-input');
+
+        if (sendBtn) {
+            sendBtn.addEventListener('click', sendChatMessage);
+        }
+
+        if (chatInput) {
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChatMessage();
+                }
+            });
+        }
+
+        function attachClinicInfoToChat() {
+            const clinicName = 'كلينيك زون - د. أحمد السيد';
+            const clinicCode = localStorage.getItem('clinic_code') || generateClinicCode();
+
+            // Pre-fill or show as first message
+            const messagesContainer = document.getElementById('chat-messages');
+            if (messagesContainer && messagesContainer.children.length <= 1) {
+                // Add system message with clinic info
+                const sysMsg = document.createElement('div');
+                sysMsg.className = 'chat-message bot';
+                sysMsg.innerHTML = `
+                    <div class="message-bubble">
+                        <strong>معلومات العيادة المرفقة تلقائياً:</strong><br>
+                        الاسم: ${clinicName}<br>
+                        الكود: ${clinicCode}
+                        <small>سيتم إرفاق هذه المعلومات مع كل رسالة</small>
+                    </div>
+                `;
+                messagesContainer.appendChild(sysMsg);
+            }
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const messagesContainer = document.getElementById('chat-messages');
+            if (!input || !messagesContainer || !input.value.trim()) return;
+
+            const message = input.value.trim();
+            input.value = '';
+
+            // Add user message
+            addChatMessage(message, 'user');
+
+            // Simulate Clinic Zone reply (in real app, this would go to support system)
+            setTimeout(() => {
+                addAutoReply(message);
+            }, 1500);
+        }
+
+        function addChatMessage(text, sender) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${sender === 'user' ? 'user' : 'bot'}`;
+            const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            msgDiv.innerHTML = `<div class="message-bubble">${text}<small>${time}</small></div>`;
+            messagesContainer.appendChild(msgDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addAutoReply(userMessage) {
+            // Simulated auto-reply based on keywords
+            let reply = 'شكراً لتواصلكم مع دعم كلينيك زون. فريقنا سيرد عليكم خلال 10 دقائق.';
+
+            if (userMessage.includes('كود') || userMessage.includes('code')) {
+                const code = localStorage.getItem('clinic_code') || 'غير محدد';
+                reply = `كود العيادة الخاص بكم هو: ${code}`;
+            } else if (userMessage.includes('حجز') || userMessage.includes('booking')) {
+                reply = 'لإدارة الحجوزات، يرجى استخدام لوحة الطبيب. هل تحتاج مساعدة محددة؟';
+            } else if (userMessage.includes('فاتورة') || userMessage.includes('دفع') || userMessage.includes('اشتراك')) {
+                reply = 'للاستفسارات المالية والاشتراكات، سيتواصل معكم فريق المحاسبة خلال 15 دقيقة.';
+            }
+
+            addChatMessage(reply, 'bot');
+        }
+
+        function generateClinicCode() {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            localStorage.setItem('clinic_code', code);
+            database.ref('clinic_settings/clinic_code').set(code).catch(console.error);
+            return code;
+        }
+    }
+
+    // ==========================================
+    // CLINIC CODE MODAL
+    // ==========================================
+    function initClinicCodeModal() {
+        const modal = document.getElementById('clinic-code-modal');
+        const codeMenuItem = document.querySelector('.drawer-nav li:nth-child(5) a');
+        if (codeMenuItem) {
+            codeMenuItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                openClinicCodeModal();
+            });
+        }
+
+        function openClinicCodeModal() {
+            if (modal) {
+                modal.classList.remove('hidden');
+                loadClinicCode();
+            }
+        }
+
+        window.closeClinicCodeModal = function() {
+            if (modal) modal.classList.add('hidden');
+        };
+
+        // Copy code
+        const copyBtn = document.getElementById('copy-clinic-code-btn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', copyClinicCode);
+        }
+
+        // Regenerate code
+        const regenerateBtn = document.getElementById('regenerate-clinic-code-btn');
+        if (regenerateBtn) {
+            regenerateBtn.addEventListener('click', regenerateClinicCode);
+        }
+
+        function loadClinicCode() {
+            // Try localStorage first
+            let code = localStorage.getItem('clinic_code');
+
+            if (!code) {
+                // Try Firebase
+                database.ref('clinic_settings/clinic_code').once('value', (snapshot) => {
+                    const fbCode = snapshot.val();
+                    if (fbCode) {
+                        code = fbCode;
+                        localStorage.setItem('clinic_code', code);
+                        displayClinicCode(code);
+                    } else {
+                        // Generate new
+                        code = generateClinicCode();
+                        displayClinicCode(code);
+                    }
+                });
+            } else {
+                displayClinicCode(code);
+            }
+        }
+
+        function displayClinicCode(code) {
+            const codeEl = document.getElementById('clinic-code-value');
+            if (codeEl) codeEl.textContent = code;
+        }
+
+        function generateClinicCode() {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            localStorage.setItem('clinic_code', code);
+            database.ref('clinic_settings/clinic_code').set(code).catch(console.error);
+            return code;
+        }
+
+        function regenerateClinicCode() {
+            if (!confirm('سيتم إنشاء كود جديد وسيبطل الكود الحالي. هل تريد المتابعة؟')) return;
+
+            const code = generateClinicCode();
+            displayClinicCode(code);
+            alert('تم إنشاء كود عيادة جديد: ' + code);
+        }
+
+        function copyClinicCode() {
+            const codeEl = document.getElementById('clinic-code-value');
+            if (!codeEl) return;
+
+            const code = codeEl.textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const copyBtn = document.getElementById('copy-clinic-code-btn');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ!';
+                copyBtn.style.background = 'var(--success)';
+                copyBtn.style.borderColor = 'var(--success)';
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.style.background = '';
+                    copyBtn.style.borderColor = '';
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('تم نسخ الكود: ' + code);
+            });
+        }
+    }
 });

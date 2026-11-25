@@ -1100,3 +1100,697 @@ body {
 @media (max-width: 1024px) and (min-width: 769px) {
     .hero-container { grid-template-columns: 1fr; gap: 30px; }
 }
+
+/* ================= MODAL OVERRIDES FOR NEW MODALS ================= */
+.modal-card.edit-patient-modal,
+.modal-card.manage-dashboard-modal,
+.modal-card.account-settings-modal,
+.modal-card.contact-modal,
+.modal-card.clinic-code-modal {
+    max-width: 950px;
+}
+
+.modal-card.clinic-code-modal {
+    max-width: 500px;
+}
+
+/* ================= EDIT PATIENT PAGE MODAL ================= */
+.edit-mode-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.edit-tab-btn {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.edit-tab-btn:hover { color: var(--primary); }
+.edit-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.edit-tab-pane { display: none; }
+.edit-tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
+
+.edit-section {
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.edit-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.edit-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 20px;
+}
+
+.image-upload-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.working-hours-entry,
+.address-entry,
+.service-entry {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 15px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    align-items: end;
+}
+
+.working-hours-entry .form-group,
+.address-entry .form-group,
+.service-entry .form-group {
+    width: 100%;
+}
+
+.working-hours-entry .form-group label,
+.address-entry .form-group label,
+.service-entry .form-group label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.remove-entry-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff1f2;
+    color: var(--danger);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.remove-entry-btn:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Patient Page Preview */
+.patient-page-preview {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    min-height: 500px;
+}
+
+.patient-page-preview .hero-section {
+    padding: 40px 0;
+    background: linear-gradient(135deg, #f0fdfa 0%, #e0f2f1 100%);
+}
+
+.patient-page-preview .hero-container {
+    grid-template-columns: 1.2fr 0.8fr;
+}
+
+.patient-page-preview .doctor-profile-card {
+    padding: 20px;
+}
+
+.patient-page-preview .doc-avatar {
+    width: 100px;
+    height: 100px;
+}
+
+.patient-page-preview .doc-credentials li {
+    font-size: 0.8rem;
+}
+
+.patient-page-preview .services-section,
+.patient-page-preview .booking-section {
+    padding: 40px 0;
+}
+
+.patient-page-preview .container { padding: 0 20px; }
+
+/* ================= MANAGE DASHBOARD MODAL ================= */
+.manage-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 5px;
+    flex-wrap: wrap;
+}
+
+.manage-tab-btn {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.manage-tab-btn:hover { color: var(--primary); }
+.manage-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.manage-tab-pane { display: none; }
+.manage-tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
+
+.bookings-mgmt-toolbar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.bookings-mgmt-toolbar input,
+.bookings-mgmt-toolbar select {
+    padding: 12px 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-family: 'Cairo', sans-serif;
+}
+
+.bookings-mgmt-toolbar input { flex: 1; min-width: 250px; }
+.bookings-mgmt-toolbar select { min-width: 180px; }
+
+.mgmt-table-container { overflow-x: auto; }
+
+/* Calendar Styles */
+.calendar-controls {
+    margin-bottom: 25px;
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.calendar-nav .btn-sm { padding: 8px 12px; font-size: 0.8rem; }
+
+.cal-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--primary);
+    min-width: 200px;
+    text-align: center;
+}
+
+.calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.calendar-day-header {
+    background: #f8fafc;
+    padding: 12px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.calendar-day {
+    background: white;
+    min-height: 100px;
+    padding: 8px;
+    position: relative;
+    transition: var(--transition);
+}
+
+.calendar-day:hover { background: #f0fdfa; }
+
+.calendar-day.other-month { background: #f8fafc; color: var(--text-muted); }
+
+.calendar-day-number {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+.calendar-booking {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.calendar-booking:hover { transform: scale(1.02); z-index: 10; }
+
+.calendar-booking.confirmed { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.calendar-booking.pending { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
+.calendar-booking.cancelled { background: #fff1f2; color: #e11d48; border: 1px solid #fee2e2; }
+
+.calendar-day.high-density { background: #fef3c7; }
+.calendar-day.conflict { background: #fee2e2; }
+
+.calendar-day .density-warning {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 800;
+}
+
+.calendar-day.high-density .density-warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.calendar-day.conflict .density-warning {
+    background: var(--danger);
+    color: white;
+}
+
+/* Theme Options */
+.theme-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 20px;
+    margin: 25px 0;
+}
+
+.theme-option {
+    cursor: pointer;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 3px solid transparent;
+    transition: var(--transition);
+    text-align: center;
+}
+
+.theme-option:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+.theme-option.active { border-color: var(--primary); }
+
+.theme-preview {
+    height: 80px;
+    border-radius: 12px 12px 0 0;
+    position: relative;
+}
+
+.theme-preview.default { background: linear-gradient(135deg, #0d9488, #14b8a6); }
+.theme-preview.blue { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+.theme-preview.green { background: linear-gradient(135deg, #10b981, #34d399); }
+.theme-preview.purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+.theme-preview.orange { background: linear-gradient(135deg, #f97316, #fb923c); }
+.theme-preview.red { background: linear-gradient(135deg, #ef4444, #f87171); }
+
+.theme-option span {
+    display: block;
+    padding: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.theme-note {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* ================= ACCOUNT SETTINGS MODAL ================= */
+.settings-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.settings-tab-btn {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.settings-tab-btn:hover { color: var(--primary); }
+.settings-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.settings-tab-pane { display: none; }
+.settings-tab-pane.active { display: block; animation: fadeIn 0.3s ease; }
+
+.settings-section {
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+.settings-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.settings-desc {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.password-strength,
+.password-match {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.password-strength.weak { color: var(--danger); }
+.password-strength.medium { color: var(--warning); }
+.password-strength.strong { color: var(--success); }
+
+.password-match.match { color: var(--success); }
+.password-match.no-match { color: var(--danger); }
+
+.rate-limit-note {
+    margin-top: 15px;
+    padding: 12px;
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: #92400e;
+    line-height: 1.6;
+}
+
+.otp-status {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.otp-status.sent { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.otp-status.error { background: #fff1f2; color: #e11d48; border: 1px solid #fee2e2; }
+.otp-status.success { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+
+/* ================= CONTACT CLINIC ZONE MODAL ================= */
+.chat-widget {
+    display: flex;
+    flex-direction: column;
+    height: 500px;
+    background: #f8fafc;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.chat-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.chat-info h4 { font-size: 1rem; font-weight: 800; margin-bottom: 2px; }
+.chat-status { font-size: 0.8rem; color: var(--text-muted); }
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.chat-message {
+    display: flex;
+    max-width: 85%;
+}
+
+.chat-message.bot { align-self: flex-start; }
+.chat-message.user { align-self: flex-end; }
+
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.chat-message.bot .message-bubble {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: 4px;
+    color: var(--text-main);
+}
+
+.chat-message.user .message-bubble {
+    background: var(--primary);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-message .message-bubble small {
+    display: block;
+    margin-top: 6px;
+    opacity: 0.7;
+    font-size: 0.75rem;
+}
+
+.chat-input-area {
+    padding: 20px;
+    background: white;
+    border-top: 1px solid var(--border-color);
+}
+
+.chat-input-area textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem;
+    resize: none;
+    margin-bottom: 12px;
+    direction: rtl;
+}
+
+.chat-input-area textarea:focus { border-color: var(--primary); outline: none; }
+
+.chat-input-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.chat-auto-info {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chat-auto-info i { color: var(--primary); }
+
+/* ================= CLINIC CODE MODAL ================= */
+.clinic-code-display {
+    text-align: center;
+    padding: 20px;
+}
+
+.code-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.code-value {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: 8px;
+    color: var(--primary);
+    font-family: monospace;
+    background: var(--primary-light);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    border: 2px dashed var(--primary);
+    direction: ltr;
+}
+
+.code-info {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.code-info h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.code-info ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.code-info li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.code-info li::before {
+    content: '\f058';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: var(--success);
+    font-size: 0.7rem;
+    margin-top: 3px;
+}
+
+.code-actions {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ================= RESPONSIVE FIXES FOR NEW MODALS ================= */
+@media (max-width: 768px) {
+    .working-hours-entry,
+    .address-entry,
+    .service-entry {
+        grid-template-columns: 1fr;
+    }
+
+    .remove-entry-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .patient-page-preview .hero-container {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-grid {
+        font-size: 0.75rem;
+    }
+
+    .calendar-day { min-height: 80px; }
+
+    .code-value {
+        font-size: 2.5rem;
+        letter-spacing: 4px;
+        padding: 15px;
+    }
+
+    .chat-widget { height: 450px; }
+}
