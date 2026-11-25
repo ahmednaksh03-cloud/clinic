@@ -1209,8 +1209,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        window.closeEditPatientModal = function() {
-            if (modal) modal.classList.add('hidden');
+        window.closeEditPatientPageModal = function() {
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        };
+
+        // Also expose open function globally
+        window.openEditPatientPageModal = openEditPatientModal;
+
+        // Reset draft function
+        window.resetEditPatientPageDraft = function() {
+            loadPatientPageDraft();
         };
 
         // Tab switching
@@ -1219,15 +1230,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 modal.querySelectorAll('.edit-tab-btn').forEach(b => b.classList.remove('active'));
                 modal.querySelectorAll('.edit-tab-pane').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
-                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+                const tabId = btn.dataset.editTab + '-tab';
+                const targetPane = document.getElementById(tabId);
+                if (targetPane) targetPane.classList.add('active');
             });
         });
 
         // Add working hours entry
-        const addHoursBtn = document.getElementById('add-hours-btn');
+        const addHoursBtn = document.getElementById('add-working-hours-btn');
         if (addHoursBtn) {
             addHoursBtn.addEventListener('click', () => {
-                const container = document.getElementById('working-hours-container');
+                const container = document.getElementById('working-hours-editor');
                 const entry = document.createElement('div');
                 entry.className = 'working-hours-entry';
                 entry.innerHTML = `
@@ -1262,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const addAddressBtn = document.getElementById('add-address-btn');
         if (addAddressBtn) {
             addAddressBtn.addEventListener('click', () => {
-                const container = document.getElementById('addresses-container');
+                const container = document.getElementById('addresses-editor');
                 const entry = document.createElement('div');
                 entry.className = 'address-entry';
                 entry.innerHTML = `
@@ -1305,13 +1318,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Save draft
-        const saveDraftBtn = document.getElementById('save-draft-btn');
+        const saveDraftBtn = document.getElementById('save-publish-patient-page-btn');
         if (saveDraftBtn) {
             saveDraftBtn.addEventListener('click', savePatientPageDraft);
         }
 
-        // Publish
-        const publishBtn = document.getElementById('publish-patient-page-btn');
+        // Publish - same button does both save and publish now
+        const publishBtn = document.getElementById('save-publish-patient-page-btn');
         if (publishBtn) {
             publishBtn.addEventListener('click', publishPatientPage);
         }
@@ -1339,7 +1352,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Also update draft to reflect published state
                 database.ref('clinic_page/draft').update({ isDraft: false, publishedAt: draftData.publishedAt });
                 alert('تم نشر صفحة المريض بنجاح!');
-                closeEditPatientModal();
+                closeEditPatientPageModal();
             }).catch(err => {
                 console.error('Error publishing:', err);
                 alert('حدث خطأ في النشر');
@@ -1349,24 +1362,24 @@ document.addEventListener('DOMContentLoaded', () => {
         function collectPatientPageData() {
             const data = {
                 doctor: {
-                    name: document.getElementById('edit-doc-name').value,
-                    title: document.getElementById('edit-doc-title').value,
-                    credentials: document.getElementById('edit-doc-credentials').value.split('\n').filter(c => c.trim()),
-                    image: document.getElementById('edit-doc-image').value || 'doctor.jpeg'
+                    name: document.getElementById('edit-doc-bio')?.value || '',
+                    title: '',
+                    credentials: [],
+                    image: document.getElementById('edit-doc-img')?.src || 'doctor.jpeg'
                 },
                 workingHours: [],
                 addresses: [],
                 services: [],
                 footer: {
-                    phone: document.getElementById('edit-footer-phone').value,
-                    email: document.getElementById('edit-footer-email').value,
-                    address: document.getElementById('edit-footer-address').value,
-                    hours: document.getElementById('edit-footer-hours').value
+                    phone: document.getElementById('edit-footer-contact')?.value || '',
+                    email: '',
+                    address: document.getElementById('edit-footer-addresses')?.value || '',
+                    hours: document.getElementById('edit-footer-hours')?.value || ''
                 }
             };
 
             // Collect working hours
-            document.querySelectorAll('#working-hours-container .working-hours-entry').forEach(entry => {
+            document.querySelectorAll('#working-hours-editor .working-hours-entry').forEach(entry => {
                 const selects = entry.querySelectorAll('select');
                 const inputs = entry.querySelectorAll('input[type="time"]');
                 if (selects[0]?.value) {
@@ -1379,14 +1392,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Collect addresses
-            document.querySelectorAll('#addresses-container .address-entry input').forEach(input => {
+            document.querySelectorAll('#addresses-editor .address-entry input').forEach(input => {
                 if (input.value.trim()) {
                     data.addresses.push(input.value.trim());
                 }
             });
 
             // Collect services
-            document.querySelectorAll('#services-container .service-entry').forEach(entry => {
+            document.querySelectorAll('#services-editor .service-entry').forEach(entry => {
                 const inputs = entry.querySelectorAll('input');
                 if (inputs[0]?.value) {
                     data.services.push({
@@ -1396,6 +1409,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
             });
+
+            // Add bio as credentials for display
+            if (data.doctor.name) {
+                data.doctor.credentials = data.doctor.name.split('\n').filter(c => c.trim());
+                data.doctor.name = 'د. أحمد السيد';
+                data.doctor.title = 'استشاري أمراض النساء والتوليد';
+            }
 
             return data;
         }
@@ -1417,49 +1437,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function populateEditForm(data) {
             if (data.doctor) {
-                document.getElementById('edit-doc-name').value = data.doctor.name || '';
-                document.getElementById('edit-doc-title').value = data.doctor.title || '';
-                document.getElementById('edit-doc-credentials').value = (data.doctor.credentials || []).join('\n');
-                document.getElementById('edit-doc-image').value = data.doctor.image || 'doctor.jpeg';
+                const bioText = (data.doctor.credentials || []).join('\n');
+                const bioEl = document.getElementById('edit-doc-bio');
+                if (bioEl) bioEl.value = bioText;
+
+                const imgEl = document.getElementById('edit-doc-img');
+                if (imgEl && data.doctor.image) imgEl.src = data.doctor.image;
             }
 
             if (data.workingHours?.length) {
-                const container = document.getElementById('working-hours-container');
-                container.innerHTML = '';
-                data.workingHours.forEach(wh => {
-                    const entry = document.createElement('div');
-                    entry.className = 'working-hours-entry';
-                    entry.innerHTML = `
-                        <div class="form-group">
-                            <label>اليوم</label>
-                            <select>
-                                <option value="السبت" ${wh.day === 'السبت' ? 'selected' : ''}>السبت</option>
-                                <option value="الأحد" ${wh.day === 'الأحد' ? 'selected' : ''}>الأحد</option>
-                                <option value="الإثنين" ${wh.day === 'الإثنين' ? 'selected' : ''}>الإثنين</option>
-                                <option value="الثلاثاء" ${wh.day === 'الثلاثاء' ? 'selected' : ''}>الثلاثاء</option>
-                                <option value="الأربعاء" ${wh.day === 'الأربعاء' ? 'selected' : ''}>الأربعاء</option>
-                                <option value="الخميس" ${wh.day === 'الخميس' ? 'selected' : ''}>الخميس</option>
-                                <option value="الجمعة" ${wh.day === 'الجمعة' ? 'selected' : ''}>الجمعة</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>من</label>
-                            <input type="time" step="1800" value="${wh.from || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label>إلى</label>
-                            <input type="time" step="1800" value="${wh.to || ''}">
-                        </div>
-                        <button class="remove-entry-btn" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
-                    `;
-                    container.appendChild(entry);
-                    entry.querySelector('.remove-entry-btn').addEventListener('click', () => entry.remove());
-                });
+                const container = document.getElementById('working-hours-editor');
+                if (container) {
+                    container.innerHTML = '';
+                    data.workingHours.forEach(wh => {
+                        const entry = document.createElement('div');
+                        entry.className = 'working-hours-entry';
+                        entry.innerHTML = `
+                            <div class="form-group">
+                                <label>اليوم</label>
+                                <select>
+                                    <option value="السبت" ${wh.day === 'السبت' ? 'selected' : ''}>السبت</option>
+                                    <option value="الأحد" ${wh.day === 'الأحد' ? 'selected' : ''}>الأحد</option>
+                                    <option value="الإثنين" ${wh.day === 'الإثنين' ? 'selected' : ''}>الإثنين</option>
+                                    <option value="الثلاثاء" ${wh.day === 'الثلاثاء' ? 'selected' : ''}>الثلاثاء</option>
+                                    <option value="الأربعاء" ${wh.day === 'الأربعاء' ? 'selected' : ''}>الأربعاء</option>
+                                    <option value="الخميس" ${wh.day === 'الخميس' ? 'selected' : ''}>الخميس</option>
+                                    <option value="الجمعة" ${wh.day === 'الجمعة' ? 'selected' : ''}>الجمعة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>من</label>
+                                <input type="time" step="1800" value="${wh.from || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>إلى</label>
+                                <input type="time" step="1800" value="${wh.to || ''}">
+                            </div>
+                            <button class="remove-entry-btn" title="حذف"><i class="fa-solid fa-trash-can"></i></button>
+                        `;
+                        container.appendChild(entry);
+                        entry.querySelector('.remove-entry-btn')?.addEventListener('click', () => entry.remove());
+                    });
+                }
             }
 
             if (data.addresses?.length) {
-                const container = document.getElementById('addresses-container');
-                container.innerHTML = '';
+                const container = document.getElementById('addresses-editor');
+                if (container) {
+                    container.innerHTML = '';
                 data.addresses.forEach(addr => {
                     const entry = document.createElement('div');
                     entry.className = 'address-entry';
@@ -1473,6 +1498,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     container.appendChild(entry);
                     entry.querySelector('.remove-entry-btn').addEventListener('click', () => entry.remove());
                 });
+                }
             }
 
             if (data.services?.length) {
@@ -1509,19 +1535,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Render preview
-        const previewBtn = document.getElementById('preview-patient-page-btn');
-        if (previewBtn) {
-            previewBtn.addEventListener('click', () => {
-                const draftData = collectPatientPageData();
-                renderPatientPagePreview(draftData);
-                // Switch to preview tab
-                modal.querySelectorAll('.edit-tab-btn').forEach(b => b.classList.remove('active'));
-                modal.querySelectorAll('.edit-tab-pane').forEach(p => p.classList.remove('active'));
-                document.querySelector('.edit-tab-btn[data-tab="preview"]').classList.add('active');
-                document.getElementById('preview-tab').classList.add('active');
-            });
-        }
+        // Render preview when preview tab is clicked
+        modal?.querySelectorAll('.edit-tab-btn').forEach(btn => {
+            if (btn.dataset.editTab === 'preview') {
+                btn.addEventListener('click', () => {
+                    const draftData = collectPatientPageData();
+                    renderPatientPagePreview(draftData);
+                });
+            }
+        });
 
         function renderPatientPagePreview(data) {
             const previewContainer = document.getElementById('patient-page-preview');
@@ -1648,10 +1670,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 modal.querySelectorAll('.manage-tab-btn').forEach(b => b.classList.remove('active'));
                 modal.querySelectorAll('.manage-tab-pane').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
-                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+                document.getElementById(btn.dataset.manageTab + '-tab')?.classList.add('active');
 
                 // Initialize calendar when tab is shown
-                if (btn.dataset.tab === 'calendar') {
+                if (btn.dataset.manageTab === 'calendar') {
                     initCalendarView();
                 }
             });
@@ -1699,9 +1721,9 @@ document.addEventListener('DOMContentLoaded', () => {
             filtered.forEach(b => {
                 const statusClass = b.status === 'مؤكد' ? 'status-confirmed' :
                                     (b.status === 'ملغي' ? 'status-cancelled' : 'status-pending');
-                const dateParts = b.date.split('-');
-                const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-                let displayPhone = b.phone;
+                const dateParts = String(b?.date || '').split('-');
+                const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : '';
+                let displayPhone = String(b?.phone || '');
                 if (displayPhone.startsWith('01')) displayPhone = '20' + displayPhone.slice(2);
 
                 const tr = document.createElement('tr');
@@ -1922,7 +1944,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modal.querySelectorAll('.settings-tab-btn').forEach(b => b.classList.remove('active'));
                 modal.querySelectorAll('.settings-tab-pane').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
-                document.getElementById(btn.dataset.tab + '-tab').classList.add('active');
+                document.getElementById(btn.dataset.settingsTab + '-tab')?.classList.add('active');
             });
         });
 
@@ -2204,7 +2226,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        window.closeContactModal = function() {
+        window.closeContactClinicZoneModal = function() {
             if (modal) modal.classList.add('hidden');
         };
 
